@@ -157,7 +157,7 @@ architecture rtl of rggen_bit_field is
       value := current_value;
     end if;
 
-    value := (value & (not clear_actual)) or set_actual;
+    value := (value and (not clear_actual)) or set_actual;
     return value;
   end get_hw_next_value;
 
@@ -219,7 +219,6 @@ begin
     signal  hw_write_enable:  std_logic;
     signal  hw_update:        std_logic;
     signal  value_next:       std_logic_vector(WIDTH - 1 downto 0);
-    signal  value:            std_logic_vector(WIDTH - 1 downto 0);
   begin
     process (i_sw_write_enable) begin
       if (SW_WRITE_ENABLE_POLARITY = RGGEN_ACTIVE_HIGH) then
@@ -249,7 +248,7 @@ begin
       process (i_clk, i_rst_n) begin
         if (i_rst_n = '0') then
           sw_write_done <= '0';
-        elsif (i_clk'event and i_clk = '1') then
+        elsif (rising_edge(i_clk)) then
           if (sw_update(0) = '1') then
             sw_write_done <= '1';
           end if;
@@ -269,7 +268,7 @@ begin
     process (i_clk, i_rst_n) begin
       if (i_rst_n = '0') then
         value <= i_initial_value;
-      elsif (i_clk'event and i_clk = '1') then
+      elsif (rising_edge(i_clk)) then
         if (sw_update /= "00" or hw_update = '1') then
           value <= value_next;
         end if;
