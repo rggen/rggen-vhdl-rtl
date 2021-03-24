@@ -1,3 +1,6 @@
+library ieee;
+use ieee.math_real.all;
+
 package rggen_rtl is
   constant  RGGEN_ACCESS_DATA_BIT:        integer := 0;
   constant  RGGEN_ACCESS_NON_POSTED_BIT:  integer := 1;
@@ -28,4 +31,13 @@ package rggen_rtl is
     RGGEN_WRITE_0_TOGGLE,
     RGGEN_WRITE_1_TOGGLE
   );
+
+  function clog2 (n: positive) return natural;
+end rggen_rtl;
+
+package body rggen_rtl is
+  function clog2(n: positive) return natural is
+  begin
+    return natural(ceil(log(real(n), 2.0)));
+  end clog2;
 end rggen_rtl;
