@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
 use work.rggen_rtl.all;
 
 entity rggen_address_decoder is
@@ -14,7 +15,7 @@ entity rggen_address_decoder is
     i_start_address:    in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_end_address:      in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_address:          in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-    i_sw_access:        in  std_logic_vector(1 downto 0);
+    i_access:           in  std_logic_vector(1 downto 0);
     i_additional_match: in  std_logic;
     o_match:            out std_logic
   );
@@ -70,5 +71,5 @@ begin
       i_address(ADDRESS_WIDTH -1 downto ADDRESS_LSB)
     );
   access_matched  <=
-    match_access(i_sw_access(DIRECTION_BIT));
+    match_access(i_access(DIRECTION_BIT));
 end rtl;
