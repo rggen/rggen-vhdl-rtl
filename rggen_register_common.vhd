@@ -16,8 +16,8 @@ entity rggen_register_common is
   port (
     i_clk:                  in  std_logic;
     i_rst_n:                in  std_logic;
-    i_offset_address:       in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-    i_valid_bits:           in  std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_offset_address:       in  unsigned(ADDRESS_WIDTH - 1 downto 0);
+    i_valid_bits:           in  unsigned(DATA_WIDTH - 1 downto 0);
     i_register_valid:       in  std_logic;
     i_register_access:      in  std_logic_vector(1 downto 0);
     i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
@@ -45,25 +45,25 @@ architecture rtl of rggen_register_common is
 
   function calc_start_address(
     index:          integer;
-    offset_address: std_logic_vector
-  ) return std_logic_vector is
+    offset_address: unsigned
+  ) return unsigned is
     variable  byte_offset:    integer;
-    variable  start_address:  std_logic_vector(offset_address'range);
+    variable  start_address:  unsigned(offset_address'range);
   begin
     byte_offset   := (DATA_BYTE_WIDTH * REGISTER_INDEX) + (BUS_BYTE_WIDTH * index);
-    start_address := std_logic_vector(unsigned(offset_address) + byte_offset);
+    start_address := offset_address + byte_offset;
     return start_address;
   end calc_start_address;
 
   function calc_end_address (
     index:          integer;
-    offset_address: std_logic_vector
-  ) return std_logic_vector is
-    variable  start_address:  std_logic_vector(offset_address'range);
-    variable  end_address:    std_logic_vector(offset_address'range);
+    offset_address: unsigned
+  ) return unsigned is
+    variable  start_address:  unsigned(offset_address'range);
+    variable  end_address:    unsigned(offset_address'range);
   begin
     start_address := calc_start_address(index, offset_address);
-    end_address   := std_logic_vector(unsigned(start_address) + BUS_BYTE_WIDTH - 1);
+    end_address   := start_address + BUS_BYTE_WIDTH - 1;
     return end_address;
   end calc_end_address;
 
@@ -130,8 +130,8 @@ begin
   active  <= '1' when unsigned(match) /= 0 else '0';
 
   g_decoder: for i in 0 to WORDS - 1 generate
-    signal  start_address:  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-    signal  end_address:    std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
+    signal  start_address:  unsigned(ADDRESS_WIDTH - 1 downto 0);
+    signal  end_address:    unsigned(ADDRESS_WIDTH - 1 downto 0);
   begin
     start_address <= calc_start_address(i, i_offset_address);
     end_address   <= calc_end_address(i, i_offset_address);
@@ -172,8 +172,8 @@ begin
   o_register_read_data  <= mux(match, masked_read_data);
   o_register_value      <= masked_value;
 
-  masked_read_data  <= i_valid_bits and i_bit_field_read_data;
-  masked_value      <= i_valid_bits and i_bit_field_value;
+  masked_read_data  <= std_logic_vector(i_valid_bits) and i_bit_field_read_data;
+  masked_value      <= std_logic_vector(i_valid_bits) and i_bit_field_value;
 
   --  Backdoor access
   backdoor_valid  <= '0';

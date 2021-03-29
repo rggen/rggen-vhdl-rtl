@@ -20,7 +20,7 @@ entity rggen_bit_field is
   port (
     i_clk:              in  std_logic;
     i_rst_n:            in  std_logic;
-    i_initial_value:    in  std_logic_vector(WIDTH - 1 downto 0);
+    i_initial_value:    in  unsigned(WIDTH - 1 downto 0);
     i_sw_valid:         in  std_logic;
     i_sw_read_mask:     in  std_logic_vector(WIDTH - 1 downto 0);
     i_sw_write_enable:  in  std_logic;
@@ -268,7 +268,7 @@ begin
       );
     process (i_clk, i_rst_n) begin
       if (i_rst_n = '0') then
-        value <= i_initial_value;
+        value <= std_logic_vector(i_initial_value);
       elsif (rising_edge(i_clk)) then
         if (sw_update /= "00" or hw_update = '1') then
           value <= value_next;

@@ -12,8 +12,8 @@ entity rggen_address_decoder is
     BUS_WIDTH:      positive  := 32
   );
   port (
-    i_start_address:    in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-    i_end_address:      in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
+    i_start_address:    in  unsigned(ADDRESS_WIDTH - 1 downto 0);
+    i_end_address:      in  unsigned(ADDRESS_WIDTH - 1 downto 0);
     i_address:          in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_access:           in  std_logic_vector(1 downto 0);
     i_additional_match: in  std_logic;
@@ -27,19 +27,22 @@ architecture rtl of rggen_address_decoder is
   constant  DIRECTION_BIT:  natural := 0;
 
   function match_address (
-    start_address:  std_logic_vector(WIDTH - 1 downto 0);
-    end_address:    std_logic_vector(WIDTH - 1 downto 0);
-    address:        std_logic_vector(WIDTH - 1 downto 0)
+    start_address:  unsigned;
+    end_address:    unsigned;
+    address:        std_logic_vector
   ) return std_logic is
-    variable  result: boolean;
+    variable  result_0: boolean;
+    variable  result_1: boolean;
   begin
     if (start_address = end_address) then
-      result  := address = start_address;
+      result_0  := unsigned(address) = start_address;
+      result_1  := true;
     else
-      result  := (address >= start_address) and (address <= end_address);
+      result_0  := unsigned(address) >= start_address;
+      result_1  := unsigned(address) <= end_address;
     end if;
 
-    if (result) then
+    if (result_0 and result_1) then
       return '1';
     else
       return '0';
