@@ -9,15 +9,15 @@ entity rggen_register_common is
     READABLE:       boolean   := true;
     WRITABLE:       boolean   := true;
     ADDRESS_WIDTH:  positive  := 8;
+    OFFSET_ADDRESS: unsigned  := x"0";
     BUS_WIDTH:      positive  := 32;
     DATA_WIDTH:     positive  := 32;
+    VALID_BITS:     unsigned  := x"F";
     REGISTER_INDEX: natural   := 0
   );
   port (
     i_clk:                  in  std_logic;
     i_rst_n:                in  std_logic;
-    i_offset_address:       in  unsigned(ADDRESS_WIDTH - 1 downto 0);
-    i_valid_bits:           in  unsigned(DATA_WIDTH - 1 downto 0);
     i_register_valid:       in  std_logic;
     i_register_access:      in  std_logic_vector(1 downto 0);
     i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
@@ -130,22 +130,17 @@ begin
   active  <= '1' when unsigned(match) /= 0 else '0';
 
   g_decoder: for i in 0 to WORDS - 1 generate
-    signal  start_address:  unsigned(ADDRESS_WIDTH - 1 downto 0);
-    signal  end_address:    unsigned(ADDRESS_WIDTH - 1 downto 0);
   begin
-    start_address <= calc_start_address(i, i_offset_address);
-    end_address   <= calc_end_address(i, i_offset_address);
-
     u_decoder: entity work.rggen_address_decoder
       generic map (
         READABLE      => READABLE,
         WRITABLE      => WRITABLE,
         ADDRESS_WIDTH => ADDRESS_WIDTH,
-        BUS_WIDTH     => BUS_WIDTH
+        BUS_WIDTH     => BUS_WIDTH,
+        START_ADDRESS => calc_start_address(i, OFFSET_ADDRESS),
+        END_ADDRESS   => calc_end_address(i, OFFSET_ADDRESS)
       )
       port map (
-        i_start_address     => start_address,
-        i_end_address       => end_address,
         i_address           => i_register_address,
         i_access            => i_register_access,
         i_additional_match  => i_additional_match,
@@ -172,8 +167,8 @@ begin
   o_register_read_data  <= mux(match, masked_read_data);
   o_register_value      <= masked_value;
 
-  masked_read_data  <= std_logic_vector(i_valid_bits) and i_bit_field_read_data;
-  masked_value      <= std_logic_vector(i_valid_bits) and i_bit_field_value;
+  masked_read_data  <= std_logic_vector(VALID_BITS) and i_bit_field_read_data;
+  masked_value      <= std_logic_vector(VALID_BITS) and i_bit_field_value;
 
   --  Backdoor access
   backdoor_valid  <= '0';

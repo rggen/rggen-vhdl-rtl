@@ -7,20 +7,20 @@ use work.rggen_rtl.all;
 entity rggen_bit_field is
   generic (
     WIDTH:                    positive            := 8;
+    INITIAL_VALUE:            unsigned            := x"0";
     PRECEDENCE_ACCESS:        rggen_sw_hw_access  := RGGEN_SW_ACCESS;
     SW_READ_ACTION:           rggen_sw_action     := RGGEN_READ_DEFAULT;
     SW_WRITE_ACTION:          rggen_sw_action     := RGGEN_WRITE_DEFAULT;
     SW_WRITE_ONCE:            boolean             := false;
     SW_WRITE_ENABLE_POLARITY: rggen_polarity      := RGGEN_ACTIVE_HIGH;
     HW_WRITE_ENABLE_POLARITY: rggen_polarity      := RGGEN_ACTIVE_HIGH;
-    HW_SET_WIDTH:             positive            := 8;
-    HW_CLEAR_WIDTH:           positive            := 8;
+    HW_SET_WIDTH:             positive            := 1;
+    HW_CLEAR_WIDTH:           positive            := 1;
     STORAGE:                  boolean             := true
   );
   port (
     i_clk:              in  std_logic;
     i_rst_n:            in  std_logic;
-    i_initial_value:    in  unsigned(WIDTH - 1 downto 0);
     i_sw_valid:         in  std_logic;
     i_sw_read_mask:     in  std_logic_vector(WIDTH - 1 downto 0);
     i_sw_write_enable:  in  std_logic;
@@ -47,15 +47,15 @@ architecture rtl of rggen_bit_field is
     write_mask:   std_logic_vector;
     write_done:   std_logic
   ) return std_logic_vector is
-    variable  read_action:  boolean;
-    variable  write_action: boolean;
-    variable  read_access:  boolean;
-    variable  write_access: boolean;
-    variable  sw_update:    std_logic_vector(1 downto 0);
+    variable  read_action:      boolean;
+    variable  write_no_action:  boolean;
+    variable  read_access:      boolean;
+    variable  write_access:     boolean;
+    variable  sw_update:        std_logic_vector(1 downto 0);
   begin
-    read_action   := (SW_READ_ACTION  = RGGEN_READ_CLEAR) or
-                     (SW_READ_ACTION  = RGGEN_READ_SET  );
-    write_action  := (SW_WRITE_ACTION = RGGEN_WRITE_NONE);
+    read_action     := (SW_READ_ACTION  = RGGEN_READ_CLEAR) or
+                       (SW_READ_ACTION  = RGGEN_READ_SET  );
+    write_no_action := (SW_WRITE_ACTION = RGGEN_WRITE_NONE);
 
     read_access   := (unsigned(read_mask)  /= 0);
     write_access  := (unsigned(write_mask) /= 0) and (write_enable = '1') and (write_done = '0');
@@ -64,7 +64,7 @@ architecture rtl of rggen_bit_field is
     if (valid = '1' and read_action and read_access) then
       sw_update(0)  := '1';
     end if;
-    if (valid = '1' and write_action and write_access) then
+    if (valid = '1' and (not write_no_action) and write_access) then
       sw_update(1)  := '1';
     end if;
 
@@ -172,31 +172,32 @@ architecture rtl of rggen_bit_field is
     hw_set:           std_logic_vector;
     hw_clear:         std_logic_vector
   ) return std_logic_vector is
-    variable  value:  std_logic_vector(current_value'range);
+    variable  value_0:  std_logic_vector(current_value'range);
+    variable  value_1:  std_logic_vector(current_value'range);
   begin
     if (PRECEDENCE_ACCESS = RGGEN_SW_ACCESS) then
-      value :=
+      value_0 :=
         get_hw_next_value(
           current_value, hw_write_enable, hw_write_data,
           hw_set, hw_clear
         );
-      value :=
+      value_1 :=
         get_sw_next_value(
-          value, sw_update, sw_write_mask, sw_write_data
+          value_0, sw_update, sw_write_mask, sw_write_data
         );
     else
-      value :=
+      value_0 :=
         get_sw_next_value(
           current_value, sw_update, sw_write_mask, sw_write_data
         );
-      value :=
+      value_1 :=
         get_hw_next_value(
-          value, hw_write_enable, hw_write_data,
+          value_0, hw_write_enable, hw_write_data,
           hw_set, hw_clear
         );
     end if;
 
-    return value;
+    return value_1;
   end get_next_value;
 
   constant  SW_READABLE:  boolean := SW_READ_ACTION /= RGGEN_READ_NONE;
@@ -268,7 +269,7 @@ begin
       );
     process (i_clk, i_rst_n) begin
       if (i_rst_n = '0') then
-        value <= std_logic_vector(i_initial_value);
+        value <= std_logic_vector(INITIAL_VALUE);
       elsif (rising_edge(i_clk)) then
         if (sw_update /= "00" or hw_update = '1') then
           value <= value_next;

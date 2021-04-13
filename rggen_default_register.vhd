@@ -9,15 +9,15 @@ entity rggen_default_register is
     READABLE:       boolean   := true;
     WRITABLE:       boolean   := true;
     ADDRESS_WIDTH:  positive  := 8;
+    OFFSET_ADDRESS: unsigned  := x"0";
     BUS_WIDTH:      positive  := 32;
     DATA_WIDTH:     positive  := 32;
+    VALID_BITS:     unsigned  := x"F";
     REGISTER_INDEX: natural   := 0
   );
   port (
     i_clk:                  in  std_logic;
     i_rst_n:                in  std_logic;
-    i_offset_address:       in  unsigned(ADDRESS_WIDTH - 1 downto 0);
-    i_valid_bits:           in  unsigned(DATA_WIDTH - 1 downto 0);
     i_register_valid:       in  std_logic;
     i_register_access:      in  std_logic_vector(1 downto 0);
     i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
@@ -44,15 +44,15 @@ begin
       READABLE        => READABLE,
       WRITABLE        => WRITABLE,
       ADDRESS_WIDTH   => ADDRESS_WIDTH,
+      OFFSET_ADDRESS  => OFFSET_ADDRESS,
       BUS_WIDTH       => BUS_WIDTH,
       DATA_WIDTH      => DATA_WIDTH,
+      VALID_BITS      => VALID_BITS,
       REGISTER_INDEX  => REGISTER_INDEX
     )
     port map (
       i_clk                   => i_clk,
       i_rst_n                 => i_rst_n,
-      i_offset_address        => i_offset_address,
-      i_valid_bits            => i_valid_bits,
       i_register_valid        => i_register_valid,
       i_register_access       => i_register_access,
       i_register_address      => i_register_address,

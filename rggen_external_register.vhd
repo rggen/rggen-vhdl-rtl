@@ -7,13 +7,13 @@ use work.rggen_rtl.all;
 entity rggen_external_register is
   generic (
     ADDRESS_WIDTH:  positive  := 8;
-    BUS_WIDTH:      positive  := 32
+    BUS_WIDTH:      positive  := 32;
+    START_ADDRESS:  unsigned  := x"0";
+    BYTE_SIZE:      positive  := 1
   );
   port (
     i_clk:                  in  std_logic;
     i_rst_n:                in  std_logic;
-    i_start_address:        in  unsigned(ADDRESS_WIDTH - 1 downto 0);
-    i_end_address:          in  unsigned(ADDRESS_WIDTH - 1 downto 0);
     i_register_valid:       in  std_logic;
     i_register_access:      in  std_logic_vector(1 downto 0);
     i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
@@ -36,13 +36,14 @@ entity rggen_external_register is
 end rggen_external_register;
 
 architecture rtl of rggen_external_register is
+  constant  END_ADDRESS:  unsigned(START_ADDRESS'range) := START_ADDRESS + BYTE_SIZE - 1;
+
   function get_external_address (
-    start_address:    unsigned;
     register_address: std_logic_vector
   ) return std_logic_vector is
     variable  address:  std_logic_vector(register_address'range);
   begin
-    address := std_logic_vector(unsigned(register_address) - start_address);
+    address := std_logic_vector(unsigned(register_address) - START_ADDRESS);
     return address;
   end get_external_address;
 
@@ -61,11 +62,11 @@ begin
       READABLE      => true,
       WRITABLE      => true,
       ADDRESS_WIDTH => ADDRESS_WIDTH,
-      BUS_WIDTH     => BUS_WIDTH
+      BUS_WIDTH     => BUS_WIDTH,
+      START_ADDRESS => START_ADDRESS,
+      END_ADDRESS   => END_ADDRESS
     )
     port map (
-      i_start_address     => i_start_address,
-      i_end_address       => i_end_address,
       i_address           => i_register_address,
       i_access            => i_register_access,
       i_additional_match  => '1',
@@ -101,7 +102,7 @@ begin
     elsif (rising_edge(i_clk)) then
       if (external_start = '1') then
         external_access   <= i_register_access;
-        external_address  <= get_external_address(i_start_address, i_register_address);
+        external_address  <= get_external_address(i_register_address);
       end if;
     end if;
   end process;

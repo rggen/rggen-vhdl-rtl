@@ -1,5 +1,6 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 use ieee.math_real.all;
 
 package rggen_rtl is
@@ -39,6 +40,18 @@ package rggen_rtl is
     word_select:  std_logic_vector;
     words:        std_logic_vector
   ) return std_logic_vector;
+
+  function slice (
+    packed_values:  unsigned;
+    width:          positive;
+    index:          natural
+  ) return unsigned;
+
+  function slice (
+    packed_values:  unsigned;
+    width:          positive;
+    index:          natural
+  ) return std_logic_vector;
 end rggen_rtl;
 
 package body rggen_rtl is
@@ -69,4 +82,22 @@ package body rggen_rtl is
     end loop;
     return out_data;
   end mux;
+
+  function slice (
+    packed_values:  unsigned;
+    width:          positive;
+    index:          natural
+  ) return unsigned is
+  begin
+    return packed_values(width*(index+1)-1 downto width*index);
+  end slice;
+
+  function slice (
+    packed_values:  unsigned;
+    width:          positive;
+    index:          natural
+  ) return std_logic_vector is
+  begin
+    return std_logic_vector(packed_values(width*(index+1)-1 downto width*index));
+  end slice;
 end rggen_rtl;

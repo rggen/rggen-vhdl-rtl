@@ -9,11 +9,11 @@ entity rggen_address_decoder is
     READABLE:       boolean   := true;
     WRITABLE:       boolean   := true;
     ADDRESS_WIDTH:  positive  := 8;
-    BUS_WIDTH:      positive  := 32
+    BUS_WIDTH:      positive  := 32;
+    START_ADDRESS:  unsigned  := x"0";
+    END_ADDRESS:    unsigned  := x"0"
   );
   port (
-    i_start_address:    in  unsigned(ADDRESS_WIDTH - 1 downto 0);
-    i_end_address:      in  unsigned(ADDRESS_WIDTH - 1 downto 0);
     i_address:          in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_access:           in  std_logic_vector(1 downto 0);
     i_additional_match: in  std_logic;
@@ -22,24 +22,24 @@ entity rggen_address_decoder is
 end rggen_address_decoder;
 
 architecture rtl of rggen_address_decoder is
-  constant  ADDRESS_LSB:    natural := clog2(BUS_WIDTH) - 3;
-  constant  WIDTH:          natural := ADDRESS_WIDTH - ADDRESS_LSB;
-  constant  DIRECTION_BIT:  natural := 0;
+  constant  ADDRESS_LSB:        natural   := clog2(BUS_WIDTH) - 3;
+  constant  WIDTH:              natural   := ADDRESS_WIDTH - ADDRESS_LSB;
+  constant  DIRECTION_BIT:      natural   := 0;
+  constant  COMPARE_ADDRESS_0:  unsigned  := START_ADDRESS(ADDRESS_WIDTH - 1 downto ADDRESS_LSB);
+  constant  COMPARE_ADDRESS_1:  unsigned  := END_ADDRESS(ADDRESS_WIDTH - 1 downto ADDRESS_LSB);
 
   function match_address (
-    start_address:  unsigned;
-    end_address:    unsigned;
-    address:        std_logic_vector
+    address:  std_logic_vector
   ) return std_logic is
     variable  result_0: boolean;
     variable  result_1: boolean;
   begin
-    if (start_address = end_address) then
-      result_0  := unsigned(address) = start_address;
+    if (COMPARE_ADDRESS_0 = COMPARE_ADDRESS_1) then
+      result_0  := unsigned(address) = COMPARE_ADDRESS_0;
       result_1  := true;
     else
-      result_0  := unsigned(address) >= start_address;
-      result_1  := unsigned(address) <= end_address;
+      result_0  := unsigned(address) >= COMPARE_ADDRESS_0;
+      result_1  := unsigned(address) <= COMPARE_ADDRESS_1;
     end if;
 
     if (result_0 and result_1) then
@@ -67,12 +67,6 @@ architecture rtl of rggen_address_decoder is
 begin
   o_match <= address_matched and access_matched and i_additional_match;
 
-  address_matched <=
-    match_address(
-      i_start_address(ADDRESS_WIDTH -1 downto ADDRESS_LSB),
-      i_end_address(ADDRESS_WIDTH -1 downto ADDRESS_LSB),
-      i_address(ADDRESS_WIDTH -1 downto ADDRESS_LSB)
-    );
-  access_matched  <=
-    match_access(i_access(DIRECTION_BIT));
+  address_matched <= match_address(i_address(ADDRESS_WIDTH -1 downto ADDRESS_LSB));
+  access_matched  <= match_access(i_access(DIRECTION_BIT));
 end rtl;
