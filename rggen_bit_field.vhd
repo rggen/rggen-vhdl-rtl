@@ -251,7 +251,7 @@ begin
         if (i_rst_n = '0') then
           sw_write_done <= '0';
         elsif (rising_edge(i_clk)) then
-          if (sw_update(0) = '1') then
+          if (sw_update(1) = '1') then
             sw_write_done <= '1';
           end if;
         end if;
