@@ -39,6 +39,26 @@ entity rggen_register_common is
 end rggen_register_common;
 
 architecture rtl of rggen_register_common is
+  component rggen_backdoor
+    generic (
+      DATA_WIDTH:         positive  := 32;
+      INSIDE_VHDL_DESIGN: boolean   := false
+    );
+    port (
+      i_clk:              in  std_logic;
+      i_rst_n:            in  std_logic;
+      i_frontdoor_valid:  in  std_logic;
+      i_frontdoor_ready:  in  std_logic;
+      o_backdoor_valid:   out std_logic;
+      o_pending_valid:    out std_logic;
+      o_read_mask:        out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      o_write_mask:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      o_write_data:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      i_read_data:        in  std_logic_vector(DATA_WIDTH - 1 downto 0);
+      i_value:            in  std_logic_vector(DATA_WIDTH - 1 downto 0)
+    );
+  end component;
+
   constant  WORDS:            positive  := DATA_WIDTH / BUS_WIDTH;
   constant  BUS_BYTE_WIDTH:   positive  := BUS_WIDTH  / 8;
   constant  DATA_BYTE_WIDTH:  positive  := DATA_WIDTH / 8;
@@ -116,6 +136,7 @@ architecture rtl of rggen_register_common is
   signal  frontdoor_valid:  std_logic;
   signal  backdoor_valid:   std_logic;
   signal  pending_valid:    std_logic;
+  signal  register_ready:   std_logic;
   signal  read_strobe:      std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
   signal  read_mask_0:      std_logic_vector(DATA_WIDTH - 1 downto 0);
   signal  read_mask_1:      std_logic_vector(DATA_WIDTH - 1 downto 0);
@@ -162,18 +183,32 @@ begin
 
   --  Response
   o_register_active     <= active;
-  o_register_ready      <= (not backdoor_valid) and active;
+  o_register_ready      <= register_ready;
   o_register_status     <= (others => '0');
   o_register_read_data  <= mux(match, masked_read_data);
   o_register_value      <= masked_value;
 
+  register_ready    <= (not backdoor_valid) and active;
   masked_read_data  <= std_logic_vector(VALID_BITS) and i_bit_field_read_data;
   masked_value      <= std_logic_vector(VALID_BITS) and i_bit_field_value;
 
   --  Backdoor access
-  backdoor_valid  <= '0';
-  read_mask_1     <= (others => '0');
-  write_mask_1    <= (others => '0');
-  write_data_1    <= (others => '0');
-  pending_valid   <= '0';
+  u_backdoor: rggen_backdoor
+    generic map (
+      DATA_WIDTH          => DATA_WIDTH,
+      INSIDE_VHDL_DESIGN  => true
+    )
+    port map (
+      i_clk             => i_clk,
+      i_rst_n           => i_rst_n,
+      i_frontdoor_valid => frontdoor_valid,
+      i_frontdoor_ready => register_ready,
+      o_backdoor_valid  => backdoor_valid,
+      o_pending_valid   => pending_valid,
+      o_read_mask       => read_mask_1,
+      o_write_mask      => write_mask_1,
+      o_write_data      => write_data_1,
+      i_read_data       => i_bit_field_read_data,
+      i_value           => i_bit_field_value
+    );
 end rtl;
