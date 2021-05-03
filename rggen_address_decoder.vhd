@@ -22,24 +22,35 @@ entity rggen_address_decoder is
 end rggen_address_decoder;
 
 architecture rtl of rggen_address_decoder is
-  constant  ADDRESS_LSB:        natural   := clog2(BUS_WIDTH) - 3;
-  constant  WIDTH:              natural   := ADDRESS_WIDTH - ADDRESS_LSB;
-  constant  DIRECTION_BIT:      natural   := 0;
-  constant  COMPARE_ADDRESS_0:  unsigned  := START_ADDRESS(ADDRESS_WIDTH - 1 downto ADDRESS_LSB);
-  constant  COMPARE_ADDRESS_1:  unsigned  := END_ADDRESS(ADDRESS_WIDTH - 1 downto ADDRESS_LSB);
+  constant  ADDRESS_LSB:        natural := clog2(BUS_WIDTH) - 3;
+  constant  WORD_ADDRESS_WIDTH: natural := ADDRESS_WIDTH - ADDRESS_LSB;
+  constant  DIRECTION_BIT:      natural := 0;
+
+  function get_word_address (
+    address:  unsigned
+  ) return unsigned is
+    alias byte_address: unsigned(address'length - 1 downto 0) is address;
+  begin
+    return byte_address(ADDRESS_WIDTH - 1 downto ADDRESS_LSB);
+  end get_word_address;
+
+  constant  COMPARE_ADDRESS_0:  unsigned  := get_word_address(START_ADDRESS);
+  constant  COMPARE_ADDRESS_1:  unsigned  := get_word_address(END_ADDRESS);
 
   function match_address (
     address:  std_logic_vector
   ) return std_logic is
-    variable  result_0: boolean;
-    variable  result_1: boolean;
+    variable  word_address: std_logic_vector(WORD_ADDRESS_WIDTH - 1 downto 0);
+    variable  result_0:     boolean;
+    variable  result_1:     boolean;
   begin
+    word_address  := address(ADDRESS_WIDTH - 1 downto ADDRESS_LSB);
     if (COMPARE_ADDRESS_0 = COMPARE_ADDRESS_1) then
-      result_0  := unsigned(address) = COMPARE_ADDRESS_0;
+      result_0  := unsigned(word_address) = COMPARE_ADDRESS_0;
       result_1  := true;
     else
-      result_0  := unsigned(address) >= COMPARE_ADDRESS_0;
-      result_1  := unsigned(address) <= COMPARE_ADDRESS_1;
+      result_0  := unsigned(word_address) >= COMPARE_ADDRESS_0;
+      result_1  := unsigned(word_address) <= COMPARE_ADDRESS_1;
     end if;
 
     if (result_0 and result_1) then
@@ -67,6 +78,6 @@ architecture rtl of rggen_address_decoder is
 begin
   o_match <= address_matched and access_matched and i_additional_match;
 
-  address_matched <= match_address(i_address(ADDRESS_WIDTH -1 downto ADDRESS_LSB));
+  address_matched <= match_address(i_address);
   access_matched  <= match_access(i_access(DIRECTION_BIT));
 end rtl;

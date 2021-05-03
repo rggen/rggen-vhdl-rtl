@@ -120,7 +120,7 @@ architecture rtl of rggen_register_common is
     return mask;
   end get_mask;
 
-  function get_write_data(
+  function get_write_data (
     write_data: std_logic_vector
   ) return std_logic_vector is
     variable  data: std_logic_vector(DATA_WIDTH - 1 downto 0);
@@ -130,6 +130,16 @@ architecture rtl of rggen_register_common is
     end loop;
     return data;
   end get_write_data;
+
+  function mask_valid_bits (
+    unmasked_bits: std_logic_vector
+  ) return std_logic_vector is
+    variable  masked_bits:  std_logic_vector(unmasked_bits'range);
+    alias     mask:         unsigned(VALID_BITS'length - 1 downto 0) is VALID_BITS;
+  begin
+    masked_bits := std_logic_vector(mask(unmasked_bits'range)) and unmasked_bits;
+    return masked_bits;
+  end mask_valid_bits;
 
   signal  match:            std_logic_vector(WORDS - 1 downto 0);
   signal  active:           std_logic;
@@ -189,8 +199,8 @@ begin
   o_register_value      <= masked_value;
 
   register_ready    <= (not backdoor_valid) and active;
-  masked_read_data  <= std_logic_vector(VALID_BITS) and i_bit_field_read_data;
-  masked_value      <= std_logic_vector(VALID_BITS) and i_bit_field_value;
+  masked_read_data  <= mask_valid_bits(i_bit_field_read_data);
+  masked_value      <= mask_valid_bits(i_bit_field_value);
 
   --  Backdoor access
   u_backdoor: rggen_backdoor

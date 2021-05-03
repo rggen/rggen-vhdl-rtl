@@ -88,8 +88,9 @@ package body rggen_rtl is
     width:          positive;
     index:          natural
   ) return unsigned is
+    alias values: unsigned(packed_values'length - 1 downto 0) is packed_values;
   begin
-    return packed_values(width*(index+1)-1 downto width*index);
+    return values(width*(index+1)-1 downto width*index);
   end slice;
 
   function slice (
@@ -97,7 +98,8 @@ package body rggen_rtl is
     width:          positive;
     index:          natural
   ) return std_logic_vector is
+    alias values: unsigned(packed_values'length - 1 downto 0) is packed_values;
   begin
-    return std_logic_vector(packed_values(width*(index+1)-1 downto width*index));
+    return std_logic_vector(values(width*(index+1)-1 downto width*index));
   end slice;
 end rggen_rtl;
