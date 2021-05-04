@@ -52,6 +52,12 @@ package rggen_rtl is
     width:          positive;
     index:          natural
   ) return std_logic_vector;
+
+  function repeat (
+    replication_value:  unsigned;
+    width:              positive;
+    multiplier:         positive
+  ) return unsigned;
 end rggen_rtl;
 
 package body rggen_rtl is
@@ -102,4 +108,18 @@ package body rggen_rtl is
   begin
     return std_logic_vector(values(width*(index+1)-1 downto width*index));
   end slice;
+
+  function repeat (
+    replication_value:  unsigned;
+    width:              positive;
+    multiplier:         positive
+  ) return unsigned is
+    alias     value:  unsigned(replication_value'length - 1 downto 0) is replication_value;
+    variable  result: unsigned(width * multiplier - 1 downto 0);
+  begin
+    for i in 0 to multiplier - 1 loop
+      result(width * (i + 1) - 1 downto width * i)  := value(width - 1 downto 0);
+    end loop;
+    return result;
+  end repeat;
 end rggen_rtl;
