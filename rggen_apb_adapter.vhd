@@ -11,13 +11,13 @@ entity rggen_apb_adaper is
     BUS_WIDTH:            positive  := 32;
     REGISTERS:            positive  := 1;
     PRE_DECODE:           boolean   := false;
+    BASE_ADDRESS:         unsigned  := x"0";
     BYTE_SIZE:            positive  := 256;
     ERROR_STATUS:         boolean   := false
   );
   port (
     i_clk:                  in  std_logic;
     i_rst_n:                in  std_logic;
-    i_base_address:         in  unsigned(ADDRESS_WIDTH - 1 downto 0);
     i_psel:                 in  std_logic;
     i_penable:              in  std_logic;
     i_paddr:                in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
@@ -89,13 +89,13 @@ begin
       BUS_WIDTH           => BUS_WIDTH,
       REGISTERS           => REGISTERS,
       PRE_DECODE          => PRE_DECODE,
+      BASE_ADDRESS        => BASE_ADDRESS,
       BYTE_SIZE           => BYTE_SIZE,
       ERROR_STATUS        => ERROR_STATUS
     )
     port map (
       i_clk                 => i_clk,
       i_rst_n               => i_rst_n,
-      i_base_address        => i_base_address,
       i_bus_valid           => bus_valid,
       i_bus_access          => bus_access,
       i_bus_address         => bus_address,

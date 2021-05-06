@@ -11,13 +11,13 @@ entity rggen_adapter_common is
     BUS_WIDTH:            positive  := 32;
     REGISTERS:            positive  := 1;
     PRE_DECODE:           boolean   := false;
+    BASE_ADDRESS:         unsigned  := x"0";
     BYTE_SIZE:            positive  := 256;
     ERROR_STATUS:         boolean   := false
   );
   port (
     i_clk:                  in  std_logic;
     i_rst_n:                in  std_logic;
-    i_base_address:         in  unsigned(ADDRESS_WIDTH - 1 downto 0);
     i_bus_valid:            in  std_logic;
     i_bus_access:           in  std_logic_vector(1 downto 0);
     i_bus_address:          in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
@@ -40,19 +40,18 @@ end rggen_adapter_common;
 
 architecture rtl of rggen_adapter_common is
   function decode_address (
-    base_address: unsigned;
     bus_address:  std_logic_vector
   ) return std_logic is
-    variable  begin_address:  unsigned(base_address'range);
-    variable  end_address:    unsigned(base_address'range);
+    variable  begin_address:  unsigned(ADDRESS_WIDTH - 1 downto 0);
+    variable  end_address:    unsigned(ADDRESS_WIDTH - 1 downto 0);
     variable  result_0:       boolean;
     variable  result_1:       boolean;
   begin
     if (PRE_DECODE) then
-      begin_address := base_address;
-      end_address   := base_address + BYTE_SIZE - 1;
-      result_0      := unsigned(base_address) >= begin_address;
-      result_1      := unsigned(base_address) <= end_address;
+      begin_address := resize(BASE_ADDRESS, ADDRESS_WIDTH);
+      end_address   := begin_address + BYTE_SIZE - 1;
+      result_0      := unsigned(bus_address) >= begin_address;
+      result_1      := unsigned(bus_address) <= end_address;
     else
       result_0  := true;
       result_1  := true;
@@ -114,7 +113,7 @@ begin
   end process;
 
   --  pre decode
-  inside_range  <= decode_address(i_base_address, i_bus_address);
+  inside_range  <= decode_address(i_bus_address);
 
   --  request
   o_register_valid      <= i_bus_valid and inside_range and (not busy);
