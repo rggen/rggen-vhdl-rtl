@@ -23,12 +23,12 @@ entity rggen_bit_field is
     i_rst_n:            in  std_logic;
     i_sw_valid:         in  std_logic;
     i_sw_read_mask:     in  std_logic_vector(WIDTH - 1 downto 0);
-    i_sw_write_enable:  in  std_logic;
+    i_sw_write_enable:  in  std_logic_vector(0 downto 0);
     i_sw_write_mask:    in  std_logic_vector(WIDTH - 1 downto 0);
     i_sw_write_data:    in  std_logic_vector(WIDTH - 1 downto 0);
     o_sw_read_data:     out std_logic_vector(WIDTH - 1 downto 0);
     o_sw_value:         out std_logic_vector(WIDTH - 1 downto 0);
-    i_hw_write_enable:  in  std_logic;
+    i_hw_write_enable:  in  std_logic_vector(0 downto 0);
     i_hw_write_data:    in  std_logic_vector(WIDTH - 1 downto 0);
     i_hw_set:           in  std_logic_vector(HW_SET_WIDTH - 1 downto 0);
     i_hw_clear:         in  std_logic_vector(HW_CLEAR_WIDTH - 1 downto 0);
@@ -224,17 +224,17 @@ begin
   begin
     process (i_sw_write_enable) begin
       if (SW_WRITE_ENABLE_POLARITY = RGGEN_ACTIVE_HIGH) then
-        sw_write_enable <= i_sw_write_enable;
+        sw_write_enable <= i_sw_write_enable(0);
       else
-        sw_write_enable <= not i_sw_write_enable;
+        sw_write_enable <= not i_sw_write_enable(0);
       end if;
     end process;
 
     process (i_hw_write_enable) begin
       if (HW_WRITE_ENABLE_POLARITY = RGGEN_ACTIVE_HIGH) then
-        hw_write_enable <= i_hw_write_enable;
+        hw_write_enable <= i_hw_write_enable(0);
       else
-        hw_write_enable <= not i_hw_write_enable;
+        hw_write_enable <= not i_hw_write_enable(0);
       end if;
     end process;
 

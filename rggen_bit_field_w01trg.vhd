@@ -14,7 +14,7 @@ entity rggen_bit_field_w01trg is
     i_rst_n:            in  std_logic;
     i_sw_valid:         in  std_logic;
     i_sw_read_mask:     in  std_logic_vector(WIDTH - 1 downto 0);
-    i_sw_write_enable:  in  std_logic;
+    i_sw_write_enable:  in  std_logic_vector(0 downto 0);
     i_sw_write_mask:    in  std_logic_vector(WIDTH - 1 downto 0);
     i_sw_write_data:    in  std_logic_vector(WIDTH - 1 downto 0);
     o_sw_read_data:     out std_logic_vector(WIDTH - 1 downto 0);
