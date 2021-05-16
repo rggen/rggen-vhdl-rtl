@@ -9,3 +9,5 @@ ${RGGEN_VHDL_RTL_ROOT}/rggen_external_register.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_adapter_common.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_apb_adapter.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_apb_bridge.vhd
+${RGGEN_VHDL_RTL_ROOT}/rggen_axi4lite_adapter.vhd
+${RGGEN_VHDL_RTL_ROOT}/rggen_axi4lite_bridge.vhd
