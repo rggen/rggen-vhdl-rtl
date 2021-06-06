@@ -117,6 +117,29 @@ architecture rtl of rggen_axi4lite_adapter is
   end get_request_ready;
 
   signal  state:                  std_logic_vector(1 downto 0);
+  signal  awvalid:                std_logic;
+  signal  awready:                std_logic;
+  signal  awid:                   std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  awaddr:                 std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
+  signal  awprot:                 std_logic_vector(2 downto 0);
+  signal  wvalid:                 std_logic;
+  signal  wready:                 std_logic;
+  signal  wdata:                  std_logic_vector(BUS_WIDTH - 1 downto 0);
+  signal  wstrb:                  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+  signal  bvalid:                 std_logic;
+  signal  bready:                 std_logic;
+  signal  bid:                    std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  bresp:                  std_logic_vector(1 downto 0);
+  signal  arvalid:                std_logic;
+  signal  arready:                std_logic;
+  signal  arid:                   std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  araddr:                 std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
+  signal  arprot:                 std_logic_vector(2 downto 0);
+  signal  rvalid:                 std_logic;
+  signal  rready:                 std_logic;
+  signal  rid:                    std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  rresp:                  std_logic_vector(1 downto 0);
+  signal  rdata:                  std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  bus_valid:              std_logic;
   signal  bus_access:             std_logic_vector(1 downto 0);
   signal  bus_access_latched:     std_logic_vector(1 downto 0);
@@ -138,10 +161,68 @@ architecture rtl of rggen_axi4lite_adapter is
   signal  response_data:          std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  response_status:        std_logic_vector(1 downto 0);
 begin
+  --  Buffer
+  u_buffer: entity work.rggen_axi4lite_skid_buffer
+    generic map (
+      ID_WIDTH      => ID_WIDTH,
+      ADDRESS_WIDTH => ADDRESS_WIDTH,
+      BUS_WIDTH     => BUS_WIDTH
+    )
+    port map (
+      i_clk     => i_clk,
+      i_rst_n   => i_rst_n,
+      i_awvalid => i_awvalid,
+      o_awready => o_awready,
+      i_awid    => i_awid,
+      i_awaddr  => i_awaddr,
+      i_awprot  => i_awprot,
+      i_wvalid  => i_wvalid,
+      o_wready  => o_wready,
+      i_wdata   => i_wdata,
+      i_wstrb   => i_wstrb,
+      o_bvalid  => o_bvalid,
+      i_bready  => i_bready,
+      o_bid     => o_bid,
+      o_bresp   => o_bresp,
+      i_arvalid => i_arvalid,
+      o_arready => o_arready,
+      i_arid    => i_arid,
+      i_araddr  => i_araddr,
+      i_arprot  => i_arprot,
+      o_rvalid  => o_rvalid,
+      i_rready  => i_rready,
+      o_rid     => o_rid,
+      o_rresp   => o_rresp,
+      o_rdata   => o_rdata,
+      o_awvalid => awvalid,
+      i_awready => awready,
+      o_awid    => awid,
+      o_awaddr  => awaddr,
+      o_awprot  => awprot,
+      o_wvalid  => wvalid,
+      i_wready  => wready,
+      o_wdata   => wdata,
+      o_wstrb   => wstrb,
+      i_bvalid  => bvalid,
+      o_bready  => bready,
+      i_bid     => bid,
+      i_bresp   => bresp,
+      o_arvalid => arvalid,
+      i_arready => arready,
+      o_arid    => arid,
+      o_araddr  => araddr,
+      o_arprot  => arprot,
+      i_rvalid  => rvalid,
+      o_rready  => rready,
+      i_rid     => rid,
+      i_rresp   => rresp,
+      i_rdata   => rdata
+    );
+
   --  Request
-  o_awready <= request_ready(0);
-  o_wready  <= request_ready(1);
-  o_arready <= request_ready(2);
+  awready <= request_ready(0);
+  wready  <= request_ready(1);
+  arready <= request_ready(2);
 
   bus_valid <=
     '1' when (state = IDLE) and (request_valid /= "00") else
@@ -152,25 +233,35 @@ begin
     RGGEN_READ  when (state = IDLE) and (request_valid(1) = '1') else
     bus_access_latched;
   bus_address <=
-    i_awaddr when (state = IDLE) and (request_valid(0) = '1') else
-    i_araddr when (state = IDLE) and (request_valid(1) = '1') else
+    awaddr when (state = IDLE) and (request_valid(0) = '1') else
+    araddr when (state = IDLE) and (request_valid(1) = '1') else
     bus_address_latched;
   bus_write_data  <=
-    i_wdata when (state = IDLE) and (request_valid(0) = '1') else
+    wdata when (state = IDLE) and (request_valid(0) = '1') else
     bus_write_data_latched;
   bus_strobe  <=
-    i_wstrb when (state = IDLE) and (request_valid(0) = '1') else
+    wstrb when (state = IDLE) and (request_valid(0) = '1') else
     bus_strobe_latched;
   bus_ack <= bus_valid and bus_ready;
 
-  request_valid <= get_request_valid(i_awvalid, i_wvalid, i_arvalid);
-  request_ready <= get_request_ready(state, i_awvalid, i_wvalid, i_arvalid);
+  request_valid <= get_request_valid(awvalid, wvalid, arvalid);
+  request_ready <= get_request_ready(state, awvalid, wvalid, arvalid);
+
+  process (i_clk, i_rst_n) begin
+    if (i_rst_n = '0') then
+      bus_access_latched  <= (others => '0');
+      bus_address_latched <= (others => '0');
+    elsif (rising_edge(i_clk)) then
+      if ((state = IDLE) and (request_valid /= "00")) then
+        bus_access_latched  <= bus_access;
+        bus_address_latched <= bus_address;
+      end if;
+    end if;
+  end process;
 
   process (i_clk) begin
     if (rising_edge(i_clk)) then
       if ((state = IDLE) and (request_valid /= "00")) then
-        bus_access_latched      <= bus_access;
-        bus_address_latched     <= bus_address;
         bus_write_data_latched  <= bus_write_data;
         bus_strobe_latched      <= bus_strobe;
       end if;
@@ -178,17 +269,17 @@ begin
   end process;
 
   -- Response
-  o_bvalid  <= response_valid(0);
-  o_bid     <= response_id;
-  o_bresp   <= response_status;
-  o_rvalid  <= response_valid(1);
-  o_rid     <= response_id;
-  o_rresp   <= response_status;
-  o_rdata   <= response_data;
+  bvalid  <= response_valid(0);
+  bid     <= response_id;
+  bresp   <= response_status;
+  rvalid  <= response_valid(1);
+  rid     <= response_id;
+  rresp   <= response_status;
+  rdata   <= response_data;
 
   response_ack  <=
-    (response_valid(0) and i_bready) or
-    (response_valid(1) and i_rready);
+    (response_valid(0) and bready) or
+    (response_valid(1) and rready);
   process (i_clk, i_rst_n) begin
     if (i_rst_n = '0') then
       response_valid  <= "00";
@@ -210,9 +301,9 @@ begin
       if (i_rst_n = '0') then
         response_id <= (others => '0');
       elsif (rising_edge(i_clk)) then
-        if ((i_awvalid = '1') and (request_ready(0) = '1')) then
+        if ((awvalid and request_ready(0)) = '1') then
           response_id <= i_awid;
-        elsif ((i_arvalid = '1') and (request_ready(2) = '1')) then
+        elsif ((arvalid and request_ready(2)) = '1') then
           response_id <= i_arid;
         end if;
       end if;
