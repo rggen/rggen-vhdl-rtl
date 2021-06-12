@@ -56,67 +56,47 @@ entity rggen_axi4lite_adapter is
 end rggen_axi4lite_adapter;
 
 architecture rtl of rggen_axi4lite_adapter is
-  constant  RGGEN_WRITE:            std_logic_vector(1 downto 0)  := "11";
-  constant  RGGEN_READ:             std_logic_vector(1 downto 0)  := "10";
-  constant  IDLE:                   std_logic_vector(1 downto 0)  := "00";
-  constant  BUS_ACCESS_BUSY:        std_logic_vector(1 downto 0)  := "01";
-  constant  WAIT_FOR_RESPONSE_ACK:  std_logic_vector(1 downto 0)  := "10";
+  constant  RGGEN_WRITE:  std_logic_vector(1 downto 0)  := "11";
+  constant  RGGEN_READ:   std_logic_vector(1 downto 0)  := "10";
 
   function get_request_valid (
     awvalid:  std_logic;
     wvalid:   std_logic;
     arvalid:  std_logic
   ) return std_logic_vector is
-    variable  write_valid:  std_logic;
-    variable  read_valid:   std_logic;
-    variable  valid:        std_logic_vector(1 downto 0);
+    variable  valid:  std_logic_vector(1 downto 0);
   begin
     if (WRITE_FIRST) then
-      write_valid := awvalid and wvalid;
-      read_valid  := arvalid and (not write_valid);
+      valid(0)  := awvalid and wvalid;
+      valid(1)  := arvalid and (not valid(0));
     else
-      read_valid  := arvalid;
-      write_valid := awvalid and wvalid and (not read_valid);
+      valid(0)  := awvalid and wvalid and (not arvalid);
+      valid(1)  := arvalid;
     end if;
-
-    valid(0)  := write_valid;
-    valid(1)  := read_valid;
 
     return valid;
   end get_request_valid;
 
   function get_request_ready (
-    state:    std_logic_vector;
     awvalid:  std_logic;
     wvalid:   std_logic;
     arvalid:  std_logic
   ) return std_logic_vector is
-    variable  awready:  std_logic;
-    variable  wready:   std_logic;
-    variable  arready:  std_logic;
-    variable  ready:    std_logic_vector(2 downto 0);
+    variable  ready:  std_logic_vector(2 downto 0);
   begin
     if (WRITE_FIRST) then
-      awready := wvalid;
-      wready  := awvalid;
-      arready := (not awvalid) and (not wvalid);
+      ready(0)  := wvalid;
+      ready(1)  := awvalid;
+      ready(2)  := (not awvalid) or (not wvalid);
     else
-      arready := '1';
-      awready := (not arvalid) and wvalid;
-      wready  := (not arvalid) and awvalid;
-    end if;
-
-    ready := "000";
-    if (state = IDLE) then
-      ready(0)  := awready;
-      ready(1)  := wready;
-      ready(2)  := arready;
+      ready(0)  := (not arvalid) and wvalid;
+      ready(1)  := (not arvalid) and awvalid;
+      ready(2)  := '1';
     end if;
 
     return ready;
   end get_request_ready;
 
-  signal  state:                  std_logic_vector(1 downto 0);
   signal  awvalid:                std_logic;
   signal  awready:                std_logic;
   signal  awid:                   std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
@@ -142,13 +122,9 @@ architecture rtl of rggen_axi4lite_adapter is
   signal  rdata:                  std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  bus_valid:              std_logic;
   signal  bus_access:             std_logic_vector(1 downto 0);
-  signal  bus_access_latched:     std_logic_vector(1 downto 0);
   signal  bus_address:            std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-  signal  bus_address_latched:    std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
   signal  bus_write_data:         std_logic_vector(BUS_WIDTH - 1 downto 0);
-  signal  bus_write_data_latched: std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  bus_strobe:             std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
-  signal  bus_strobe_latched:     std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
   signal  bus_ready:              std_logic;
   signal  bus_status:             std_logic_vector(1 downto 0);
   signal  bus_read_data:          std_logic_vector(BUS_WIDTH - 1 downto 0);
@@ -220,53 +196,19 @@ begin
     );
 
   --  Request
-  awready <= request_ready(0);
-  wready  <= request_ready(1);
-  arready <= request_ready(2);
+  awready <= '1' when (bus_ready = '1') and (request_ready(0) = '1') and (response_valid = "00") else '0';
+  wready  <= '1' when (bus_ready = '1') and (request_ready(1) = '1') and (response_valid = "00") else '0';
+  arready <= '1' when (bus_ready = '1') and (request_ready(2) = '1') and (response_valid = "00") else '0';
 
-  bus_valid <=
-    '1' when (state = IDLE) and (request_valid /= "00") else
-    '1' when (state = BUS_ACCESS_BUSY) else
-    '0';
-  bus_access  <=
-    RGGEN_WRITE when (state = IDLE) and (request_valid(0) = '1') else
-    RGGEN_READ  when (state = IDLE) and (request_valid(1) = '1') else
-    bus_access_latched;
-  bus_address <=
-    awaddr when (state = IDLE) and (request_valid(0) = '1') else
-    araddr when (state = IDLE) and (request_valid(1) = '1') else
-    bus_address_latched;
-  bus_write_data  <=
-    wdata when (state = IDLE) and (request_valid(0) = '1') else
-    bus_write_data_latched;
-  bus_strobe  <=
-    wstrb when (state = IDLE) and (request_valid(0) = '1') else
-    bus_strobe_latched;
-  bus_ack <= bus_valid and bus_ready;
+  bus_valid       <= '1' when (request_valid /= "00") and (response_valid = "00") else '0';
+  bus_access      <= RGGEN_WRITE when (request_valid(0) = '1') else RGGEN_READ;
+  bus_address     <= awaddr      when (request_valid(0) = '1') else araddr;
+  bus_write_data  <= wdata;
+  bus_strobe      <= wstrb;
+  bus_ack         <= bus_valid and bus_ready;
 
   request_valid <= get_request_valid(awvalid, wvalid, arvalid);
-  request_ready <= get_request_ready(state, awvalid, wvalid, arvalid);
-
-  process (i_clk, i_rst_n) begin
-    if (i_rst_n = '0') then
-      bus_access_latched  <= (others => '0');
-      bus_address_latched <= (others => '0');
-    elsif (rising_edge(i_clk)) then
-      if ((state = IDLE) and (request_valid /= "00")) then
-        bus_access_latched  <= bus_access;
-        bus_address_latched <= bus_address;
-      end if;
-    end if;
-  end process;
-
-  process (i_clk) begin
-    if (rising_edge(i_clk)) then
-      if ((state = IDLE) and (request_valid /= "00")) then
-        bus_write_data_latched  <= bus_write_data;
-        bus_strobe_latched      <= bus_strobe;
-      end if;
-    end if;
-  end process;
+  request_ready <= get_request_ready(awvalid, wvalid, arvalid);
 
   -- Response
   bvalid  <= response_valid(0);
@@ -301,10 +243,10 @@ begin
       if (i_rst_n = '0') then
         response_id <= (others => '0');
       elsif (rising_edge(i_clk)) then
-        if ((awvalid and request_ready(0)) = '1') then
-          response_id <= i_awid;
-        elsif ((arvalid and request_ready(2)) = '1') then
-          response_id <= i_arid;
+        if ((awvalid and awready) = '1') then
+          response_id <= awid;
+        elsif ((arvalid and arready) = '1') then
+          response_id <= arid;
         end if;
       end if;
     end process;
@@ -319,29 +261,6 @@ begin
       if (bus_ack = '1') then
         response_status <= bus_status;
         response_data   <= bus_read_data;
-      end if;
-    end if;
-  end process;
-
-  -- FSM
-  process (i_clk, i_rst_n) begin
-    if (i_rst_n = '0') then
-      state <= IDLE;
-    elsif (rising_edge(i_clk)) then
-      if (state = IDLE) then
-        if (bus_ack = '1') then
-          state <= WAIT_FOR_RESPONSE_ACK;
-        elsif (bus_valid = '1') then
-          state <= BUS_ACCESS_BUSY;
-        end if;
-      elsif (state = BUS_ACCESS_BUSY) then
-        if (bus_ready = '1') then
-          state <= WAIT_FOR_RESPONSE_ACK;
-        end if;
-      elsif (state = WAIT_FOR_RESPONSE_ACK) then
-        if (response_ack = '1') then
-          state <= IDLE;
-        end if;
       end if;
     end if;
   end process;
