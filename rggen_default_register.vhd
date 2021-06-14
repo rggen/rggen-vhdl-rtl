@@ -6,14 +6,14 @@ use work.rggen_rtl.all;
 
 entity rggen_default_register is
   generic (
-    READABLE:       boolean   := true;
-    WRITABLE:       boolean   := true;
-    ADDRESS_WIDTH:  positive  := 8;
-    OFFSET_ADDRESS: unsigned  := x"0";
-    BUS_WIDTH:      positive  := 32;
-    DATA_WIDTH:     positive  := 32;
-    VALID_BITS:     unsigned  := x"F";
-    REGISTER_INDEX: natural   := 0
+    READABLE:       boolean           := true;
+    WRITABLE:       boolean           := true;
+    ADDRESS_WIDTH:  positive          := 8;
+    OFFSET_ADDRESS: unsigned          := x"0";
+    BUS_WIDTH:      positive          := 32;
+    DATA_WIDTH:     positive          := 32;
+    VALID_BITS:     std_logic_vector  := x"F";
+    REGISTER_INDEX: natural           := 0
   );
   port (
     i_clk:                  in  std_logic;

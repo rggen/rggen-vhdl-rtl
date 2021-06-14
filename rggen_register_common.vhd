@@ -6,14 +6,14 @@ use work.rggen_rtl.all;
 
 entity rggen_register_common is
   generic (
-    READABLE:       boolean   := true;
-    WRITABLE:       boolean   := true;
-    ADDRESS_WIDTH:  positive  := 8;
-    OFFSET_ADDRESS: unsigned  := x"0";
-    BUS_WIDTH:      positive  := 32;
-    DATA_WIDTH:     positive  := 32;
-    VALID_BITS:     unsigned  := x"F";
-    REGISTER_INDEX: natural   := 0
+    READABLE:       boolean           := true;
+    WRITABLE:       boolean           := true;
+    ADDRESS_WIDTH:  positive          := 8;
+    OFFSET_ADDRESS: unsigned          := x"0";
+    BUS_WIDTH:      positive          := 32;
+    DATA_WIDTH:     positive          := 32;
+    VALID_BITS:     std_logic_vector  := x"F";
+    REGISTER_INDEX: natural           := 0
   );
   port (
     i_clk:                  in  std_logic;
@@ -135,9 +135,9 @@ architecture rtl of rggen_register_common is
     unmasked_bits: std_logic_vector
   ) return std_logic_vector is
     variable  masked_bits:  std_logic_vector(unmasked_bits'range);
-    alias     mask:         unsigned(VALID_BITS'length - 1 downto 0) is VALID_BITS;
+    alias     mask:         std_logic_vector(VALID_BITS'length - 1 downto 0) is VALID_BITS;
   begin
-    masked_bits := std_logic_vector(mask(unmasked_bits'range)) and unmasked_bits;
+    masked_bits := mask(unmasked_bits'range) and unmasked_bits;
     return masked_bits;
   end mask_valid_bits;
 
