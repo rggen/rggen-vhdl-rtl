@@ -40,7 +40,7 @@ begin
         else
           trigger <= i_sw_write_mask and (not i_sw_write_data);
         end if;
-      else
+      elsif (unsigned(trigger) /= 0) then
         trigger <= (others => '0');
       end if;
     end if;
