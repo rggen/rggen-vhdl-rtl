@@ -16,7 +16,8 @@ entity rggen_bit_field is
     HW_WRITE_ENABLE_POLARITY: rggen_polarity      := RGGEN_ACTIVE_HIGH;
     HW_SET_WIDTH:             positive            := 1;
     HW_CLEAR_WIDTH:           positive            := 1;
-    STORAGE:                  boolean             := true
+    STORAGE:                  boolean             := true;
+    EXTERNAL_READ_DATA:       boolean             := false
   );
   port (
     i_clk:              in  std_logic;
@@ -206,13 +207,10 @@ architecture rtl of rggen_bit_field is
   signal  value_masked: std_logic_vector(WIDTH - 1 downto 0);
   signal  read_data:    std_logic_vector(WIDTH - 1 downto 0);
 begin
-  o_sw_read_data    <= read_data;
+  o_sw_read_data    <= read_data and i_mask;
   o_sw_value        <= value;
-  o_value           <= value_masked;
+  o_value           <= value and i_mask;
   o_value_unmasked  <= value;
-
-  value_masked  <= value and i_mask;
-  read_data     <= value_masked when SW_READABLE else (others => '0');
 
   g_storage: if (STORAGE) generate
     signal  sw_write_enable:  std_logic;
@@ -280,5 +278,17 @@ begin
 
   g_through: if (not STORAGE) generate
     value <= i_value;
+  end generate;
+
+  g_internal_read_data: if (SW_READABLE and (not EXTERNAL_READ_DATA)) generate
+    read_data <= value;
+  end generate;
+
+  g_external_read_data: if (SW_READABLE and EXTERNAL_READ_DATA) generate
+    read_data <= i_value;
+  end generate;
+
+  g_no_read_data: if (not SW_READABLE) generate
+    read_data <= (others => '0');
   end generate;
 end rtl;
