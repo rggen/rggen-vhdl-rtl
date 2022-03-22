@@ -17,7 +17,8 @@ entity rggen_bit_field is
     HW_SET_WIDTH:             positive            := 1;
     HW_CLEAR_WIDTH:           positive            := 1;
     STORAGE:                  boolean             := true;
-    EXTERNAL_READ_DATA:       boolean             := false
+    EXTERNAL_READ_DATA:       boolean             := false;
+    TRIGGER:                  boolean             := false
   );
   port (
     i_clk:              in  std_logic;
@@ -29,6 +30,8 @@ entity rggen_bit_field is
     i_sw_write_data:    in  std_logic_vector(WIDTH - 1 downto 0);
     o_sw_read_data:     out std_logic_vector(WIDTH - 1 downto 0);
     o_sw_value:         out std_logic_vector(WIDTH - 1 downto 0);
+    o_write_trigger:    out std_logic_vector(0 downto 0);
+    o_read_trigger:     out std_logic_vector(0 downto 0);
     i_hw_write_enable:  in  std_logic_vector(0 downto 0);
     i_hw_write_data:    in  std_logic_vector(WIDTH - 1 downto 0);
     i_hw_set:           in  std_logic_vector(HW_SET_WIDTH - 1 downto 0);
@@ -41,6 +44,9 @@ entity rggen_bit_field is
 end rggen_bit_field;
 
 architecture rtl of rggen_bit_field is
+  constant  ENABLE_WRITE_TRIGGER: boolean := TRIGGER and (SW_WRITE_ACTION /= RGGEN_WRITE_NONE);
+  constant  ENABLE_READ_TRIGGER:  boolean := TRIGGER and (SW_READ_ACTION  /= RGGEN_READ_NONE );
+
   function get_sw_update (
     valid:        std_logic;
     read_mask:    std_logic_vector;
@@ -203,63 +209,103 @@ architecture rtl of rggen_bit_field is
 
   constant  SW_READABLE:  boolean := SW_READ_ACTION /= RGGEN_READ_NONE;
 
-  signal  value:        std_logic_vector(WIDTH - 1 downto 0);
-  signal  value_masked: std_logic_vector(WIDTH - 1 downto 0);
-  signal  read_data:    std_logic_vector(WIDTH - 1 downto 0);
+  signal  sw_write_enable:  std_logic;
+  signal  sw_update:        std_logic_vector(1 downto 0);
+  signal  sw_write_done:    std_logic;
+  signal  hw_write_enable:  std_logic;
+  signal  hw_update:        std_logic;
+  signal  write_trigger:    std_logic;
+  signal  read_trigger:     std_logic;
+  signal  value:            std_logic_vector(WIDTH - 1 downto 0);
+  signal  value_masked:     std_logic_vector(WIDTH - 1 downto 0);
+  signal  read_data:        std_logic_vector(WIDTH - 1 downto 0);
 begin
-  o_sw_read_data    <= read_data and i_mask;
-  o_sw_value        <= value;
-  o_value           <= value and i_mask;
-  o_value_unmasked  <= value;
+  o_sw_read_data      <= read_data and i_mask;
+  o_sw_value          <= value;
+  o_write_trigger(0)  <= write_trigger;
+  o_read_trigger(0)   <= read_trigger;
+  o_value             <= value and i_mask;
+  o_value_unmasked    <= value;
+
+  process (i_sw_write_enable) begin
+    if (SW_WRITE_ENABLE_POLARITY = RGGEN_ACTIVE_HIGH) then
+      sw_write_enable <= i_sw_write_enable(0);
+    else
+      sw_write_enable <= not i_sw_write_enable(0);
+    end if;
+  end process;
+
+  process (i_hw_write_enable) begin
+    if (HW_WRITE_ENABLE_POLARITY = RGGEN_ACTIVE_HIGH) then
+      hw_write_enable <= i_hw_write_enable(0);
+    else
+      hw_write_enable <= not i_hw_write_enable(0);
+    end if;
+  end process;
+
+  sw_update <=
+    get_sw_update(
+      i_sw_valid, i_sw_read_mask, sw_write_enable,
+      i_sw_write_mask, sw_write_done
+    );
+  hw_update <=
+    get_hw_update(hw_write_enable, i_hw_set, i_hw_clear);
+
+  g_sw_write_onece: if (SW_WRITE_ONCE) generate
+    process (i_clk, i_rst_n) begin
+      if (i_rst_n = '0') then
+        sw_write_done <= '0';
+      elsif (rising_edge(i_clk)) then
+        if (sw_update(1) = '1') then
+          sw_write_done <= '1';
+        end if;
+      end if;
+    end process;
+  end generate;
+
+  g_sw_write_anytime: if (not SW_WRITE_ONCE) generate
+    sw_write_done <= '0';
+  end generate;
+
+  g_write_trigger: if (ENABLE_WRITE_TRIGGER) generate
+  begin
+    process (i_clk, i_rst_n) begin
+      if (i_rst_n = '0') then
+        write_trigger <= '0';
+      elsif (rising_edge(i_clk)) then
+        write_trigger <= sw_update(1);
+      end if;
+    end process;
+  end generate;
+
+  g_no_write_trigger: if (not ENABLE_WRITE_TRIGGER) generate
+  begin
+    write_trigger <= '0';
+  end generate;
+
+  g_read_trigger: if (ENABLE_READ_TRIGGER) generate
+  begin
+    process (i_clk, i_rst_n) begin
+      if (i_rst_n = '0') then
+        read_trigger  <= '0';
+      elsif (rising_edge(i_clk)) then
+        if (i_sw_valid = '1' and unsigned(i_sw_read_mask) /= 0) then
+          read_trigger  <= '1';
+        else
+          read_trigger  <= '0';
+        end if;
+      end if;
+    end process;
+  end generate;
+
+  g_no_read_trigger: if (not ENABLE_READ_TRIGGER) generate
+  begin
+    read_trigger  <= '0';
+  end generate;
 
   g_storage: if (STORAGE) generate
-    signal  sw_write_enable:  std_logic;
-    signal  sw_update:        std_logic_vector(1 downto 0);
-    signal  sw_write_done:    std_logic;
-    signal  hw_write_enable:  std_logic;
-    signal  hw_update:        std_logic;
-    signal  value_next:       std_logic_vector(WIDTH - 1 downto 0);
+    signal  value_next: std_logic_vector(WIDTH - 1 downto 0);
   begin
-    process (i_sw_write_enable) begin
-      if (SW_WRITE_ENABLE_POLARITY = RGGEN_ACTIVE_HIGH) then
-        sw_write_enable <= i_sw_write_enable(0);
-      else
-        sw_write_enable <= not i_sw_write_enable(0);
-      end if;
-    end process;
-
-    process (i_hw_write_enable) begin
-      if (HW_WRITE_ENABLE_POLARITY = RGGEN_ACTIVE_HIGH) then
-        hw_write_enable <= i_hw_write_enable(0);
-      else
-        hw_write_enable <= not i_hw_write_enable(0);
-      end if;
-    end process;
-
-    sw_update <=
-      get_sw_update(
-        i_sw_valid, i_sw_read_mask, sw_write_enable,
-        i_sw_write_mask, sw_write_done
-      );
-    hw_update <=
-      get_hw_update(hw_write_enable, i_hw_set, i_hw_clear);
-
-    g_sw_write_onece: if (SW_WRITE_ONCE) generate
-      process (i_clk, i_rst_n) begin
-        if (i_rst_n = '0') then
-          sw_write_done <= '0';
-        elsif (rising_edge(i_clk)) then
-          if (sw_update(1) = '1') then
-            sw_write_done <= '1';
-          end if;
-        end if;
-      end process;
-    end generate;
-
-    g_sw_write_anytime: if (not SW_WRITE_ONCE) generate
-      sw_write_done <= '0';
-    end generate;
-
     value_next  <=
       get_next_value(
         value, sw_update, i_sw_write_mask, i_sw_write_data,
