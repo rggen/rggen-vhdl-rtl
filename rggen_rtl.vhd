@@ -7,6 +7,15 @@ package rggen_rtl is
   constant  RGGEN_ACCESS_DATA_BIT:        integer := 0;
   constant  RGGEN_ACCESS_NON_POSTED_BIT:  integer := 1;
 
+  constant  RGGEN_READ:         std_logic_vector  := "10";
+  constant  RGGEN_POSTED_WRITE: std_logic_vector  := "01";
+  constant  RGGEN_WRITE:        std_logic_vector  := "11";
+
+  constant  RGGEN_OKAY:         std_logic_vector  := "00";
+  constant  RGGEN_EXOKAY:       std_logic_vector  := "01";
+  constant  RGGEN_SLAVE_ERROR:  std_logic_vector  := "10";
+  constant  RGGEN_DECODE_ERROR: std_logic_vector  := "11";
+
   type rggen_sw_hw_access is (
     RGGEN_SW_ACCESS,
     RGGEN_HW_ACCESS

@@ -12,3 +12,5 @@ ${RGGEN_VHDL_RTL_ROOT}/rggen_apb_bridge.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_axi4lite_skid_buffer.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_axi4lite_adapter.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_axi4lite_bridge.vhd
+${RGGEN_VHDL_RTL_ROOT}/rggen_wishbone_adapter.vhd
+${RGGEN_VHDL_RTL_ROOT}/rggen_wishbone_bridge.vhd
