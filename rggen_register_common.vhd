@@ -41,8 +41,7 @@ end rggen_register_common;
 architecture rtl of rggen_register_common is
   component rggen_backdoor
     generic (
-      DATA_WIDTH:         positive  := 32;
-      INSIDE_VHDL_DESIGN: boolean   := false
+      DATA_WIDTH: positive  := 32
     );
     port (
       i_clk:              in  std_logic;
@@ -205,8 +204,7 @@ begin
   --  Backdoor access
   u_backdoor: rggen_backdoor
     generic map (
-      DATA_WIDTH          => DATA_WIDTH,
-      INSIDE_VHDL_DESIGN  => true
+      DATA_WIDTH  => DATA_WIDTH
     )
     port map (
       i_clk             => i_clk,

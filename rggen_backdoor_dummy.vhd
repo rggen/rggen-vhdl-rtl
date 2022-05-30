@@ -6,8 +6,7 @@ use work.rggen_rtl.all;
 
 entity rggen_backdoor is
   generic (
-    DATA_WIDTH: positive        := 32;
-    INSIDE_VHDL_DESIGN: boolean := false
+    DATA_WIDTH: positive  := 32
   );
   port (
     i_clk:              in  std_logic;
