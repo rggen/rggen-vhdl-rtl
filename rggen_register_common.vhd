@@ -6,14 +6,13 @@ use work.rggen_rtl.all;
 
 entity rggen_register_common is
   generic (
-    READABLE:       boolean           := true;
-    WRITABLE:       boolean           := true;
-    ADDRESS_WIDTH:  positive          := 8;
-    OFFSET_ADDRESS: unsigned          := x"0";
-    BUS_WIDTH:      positive          := 32;
-    DATA_WIDTH:     positive          := 32;
-    VALID_BITS:     std_logic_vector  := x"F";
-    REGISTER_INDEX: natural           := 0
+    READABLE:       boolean   := true;
+    WRITABLE:       boolean   := true;
+    ADDRESS_WIDTH:  positive  := 8;
+    OFFSET_ADDRESS: unsigned  := x"0";
+    BUS_WIDTH:      positive  := 32;
+    DATA_WIDTH:     positive  := 32;
+    REGISTER_INDEX: natural   := 0
   );
   port (
     i_clk:                  in  std_logic;
@@ -130,16 +129,6 @@ architecture rtl of rggen_register_common is
     return data;
   end get_write_data;
 
-  function mask_valid_bits (
-    unmasked_bits: std_logic_vector
-  ) return std_logic_vector is
-    variable  masked_bits:  std_logic_vector(unmasked_bits'range);
-    alias     mask:         std_logic_vector(VALID_BITS'length - 1 downto 0) is VALID_BITS;
-  begin
-    masked_bits := mask(unmasked_bits'range) and unmasked_bits;
-    return masked_bits;
-  end mask_valid_bits;
-
   signal  match:            std_logic_vector(WORDS - 1 downto 0);
   signal  active:           std_logic;
   signal  frontdoor_valid:  std_logic;
@@ -194,12 +183,10 @@ begin
   o_register_active     <= active;
   o_register_ready      <= register_ready;
   o_register_status     <= (others => '0');
-  o_register_read_data  <= mux(match, masked_read_data);
-  o_register_value      <= masked_value;
+  o_register_read_data  <= mux(match, i_bit_field_read_data);
+  o_register_value      <= i_bit_field_value;
 
-  register_ready    <= (not backdoor_valid) and active;
-  masked_read_data  <= mask_valid_bits(i_bit_field_read_data);
-  masked_value      <= mask_valid_bits(i_bit_field_value);
+  register_ready  <= (not backdoor_valid) and active;
 
   --  Backdoor access
   u_backdoor: rggen_backdoor

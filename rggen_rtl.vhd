@@ -50,6 +50,11 @@ package rggen_rtl is
     words:        std_logic_vector
   ) return std_logic_vector;
 
+  function bit_slice (
+    value:  std_logic_vector;
+    index:  natural
+  ) return std_logic;
+
   function slice (
     packed_values:  unsigned;
     width:          positive;
@@ -121,6 +126,15 @@ package body rggen_rtl is
   begin
     return std_logic_vector(values(width*(index+1)-1 downto width*index));
   end slice;
+
+  function bit_slice (
+    value:  std_logic_vector;
+    index:  natural
+  ) return std_logic is
+    alias v:  std_logic_vector(value'length - 1 downto 0) is value;
+  begin
+    return v(index);
+  end bit_slice;
 
   function repeat (
     replication_value:  unsigned;
