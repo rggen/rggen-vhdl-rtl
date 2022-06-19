@@ -45,11 +45,6 @@ package rggen_rtl is
 
   function clog2 (n: positive) return natural;
 
-  function mux (
-    word_select:  std_logic_vector;
-    words:        std_logic_vector
-  ) return std_logic_vector;
-
   function bit_slice (
     value:  std_logic_vector;
     index:  natural
@@ -73,6 +68,18 @@ package rggen_rtl is
     multiplier:         positive
   ) return unsigned;
 
+  function reduce_or (
+    n:      natural;
+    offset: natural;
+    width:  positive;
+    data:   std_logic_vector
+  ) return std_logic_vector;
+
+  function mux (
+    word_select:  std_logic_vector;
+    words:        std_logic_vector
+  ) return std_logic_vector;
+
   function clip_id_width(
     id_width: natural
   ) return natural;
@@ -83,29 +90,6 @@ package body rggen_rtl is
   begin
     return natural(ceil(log(real(n), 2.0)));
   end clog2;
-
-  function mux (
-    word_select:  std_logic_vector;
-    words:        std_logic_vector
-  ) return std_logic_vector is
-    constant  entries:    positive  := word_select'length;
-    constant  word_width: positive  := words'length / entries;
-
-    variable  word:     std_logic_vector(word_width -1 downto 0);
-    variable  mask:     std_logic_vector(word_width -1 downto 0);
-    variable  out_data: std_logic_vector(word_width -1 downto 0);
-  begin
-    for i in 0 to entries - 1 loop
-      word  := words(word_width*(i+1)-1 downto word_width*i);
-      mask  := (others => word_select(i));
-      if i = 0 then
-        out_data  := (word and mask);
-      else
-        out_data  := (word and mask) or out_data;
-      end if;
-    end loop;
-    return out_data;
-  end mux;
 
   function slice (
     packed_values:  unsigned;
@@ -149,6 +133,68 @@ package body rggen_rtl is
     end loop;
     return result;
   end repeat;
+
+  function reduce_or (
+    n:      natural;
+    offset: natural;
+    width:  positive;
+    data:   std_logic_vector
+  ) return std_logic_vector is
+    variable  next_n:       natural;
+    variable  next_offset:  natural;
+    variable  result_0:     std_logic_vector(width - 1 downto 0);
+    variable  result_1:     std_logic_vector(width - 1 downto 0);
+  begin
+    if (n > 4) then
+      next_n      := n / 2;
+      next_offset := offset;
+      result_0    := reduce_or(next_n, next_offset, width, data);
+
+      next_n      := (n / 2) + (n mod 2);
+      next_offset := (n / 2) + offset;
+      result_1    := reduce_or(next_n, next_offset, width, data);
+
+      return result_0 or result_1;
+    elsif (n = 4) then
+      return
+        data((0+offset+1)*width-1 downto (0+offset)*width) or
+        data((1+offset+1)*width-1 downto (1+offset)*width) or
+        data((2+offset+1)*width-1 downto (2+offset)*width) or
+        data((3+offset+1)*width-1 downto (3+offset)*width);
+    elsif (n = 3) then
+      return
+        data((0+offset+1)*width-1 downto (0+offset)*width) or
+        data((1+offset+1)*width-1 downto (1+offset)*width) or
+        data((2+offset+1)*width-1 downto (2+offset)*width);
+    elsif (n = 2) then
+      return
+        data((0+offset+1)*width-1 downto (0+offset)*width) or
+        data((1+offset+1)*width-1 downto (1+offset)*width);
+    else
+      return
+        data((0+offset+1)*width-1 downto (0+offset)*width);
+    end if;
+  end reduce_or;
+
+  function mux (
+    word_select:  std_logic_vector;
+    words:        std_logic_vector
+  ) return std_logic_vector is
+    constant  entries:    positive  := word_select'length;
+    constant  word_width: positive  := words'length / entries;
+
+    variable  word:         std_logic_vector(word_width - 1 downto 0);
+    variable  mask:         std_logic_vector(word_width - 1 downto 0);
+    variable  masked_words: std_logic_vector(words'length - 1 downto 0);
+  begin
+    for i in 0 to entries - 1 loop
+      word                                                  := words((i+1)*word_width-1 downto i*word_width);
+      mask                                                  := (others => word_select(i));
+      masked_words((i+1)*word_width-1 downto i*word_width)  := word and mask;
+    end loop;
+
+    return reduce_or(entries, 0, word_width, masked_words);
+  end mux;
 
   function clip_id_width(
     id_width: natural
