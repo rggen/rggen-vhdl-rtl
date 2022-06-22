@@ -8,7 +8,7 @@ entity rggen_bit_field is
   generic (
     WIDTH:                    positive            := 8;
     INITIAL_VALUE:            unsigned            := x"0";
-    PRECEDENCE_ACCESS:        rggen_sw_hw_access  := RGGEN_SW_ACCESS;
+    PRECEDENCE_ACCESS:        rggen_sw_hw_access  := RGGEN_HW_ACCESS;
     SW_READ_ACTION:           rggen_sw_action     := RGGEN_READ_DEFAULT;
     SW_WRITE_ACTION:          rggen_sw_action     := RGGEN_WRITE_DEFAULT;
     SW_WRITE_ONCE:            boolean             := false;
