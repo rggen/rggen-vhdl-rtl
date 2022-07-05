@@ -19,6 +19,7 @@ entity rggen_bit_field_w01trg is
     i_sw_write_data:    in  std_logic_vector(WIDTH - 1 downto 0);
     o_sw_read_data:     out std_logic_vector(WIDTH - 1 downto 0);
     o_sw_value:         out std_logic_vector(WIDTH - 1 downto 0);
+    i_value:            in  std_logic_vector(WIDTH - 1 downto 0);
     o_trigger:          out std_logic_vector(WIDTH - 1 downto 0)
   );
 end rggen_bit_field_w01trg;
@@ -26,7 +27,7 @@ end rggen_bit_field_w01trg;
 architecture rtl of rggen_bit_field_w01trg is
   signal  trigger:  std_logic_vector(WIDTH - 1 downto 0);
 begin
-  o_sw_read_data  <= (others => '0');
+  o_sw_read_data  <= i_value;
   o_sw_value      <= trigger;
   o_trigger       <= trigger;
 
