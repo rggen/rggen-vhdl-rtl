@@ -77,26 +77,6 @@ architecture rtl of rggen_axi4lite_adapter is
     return valid;
   end get_request_valid;
 
-  function get_request_ready (
-    awvalid:  std_logic;
-    wvalid:   std_logic;
-    arvalid:  std_logic
-  ) return std_logic_vector is
-    variable  ready:  std_logic_vector(2 downto 0);
-  begin
-    if (WRITE_FIRST) then
-      ready(0)  := wvalid;
-      ready(1)  := awvalid;
-      ready(2)  := (not awvalid) or (not wvalid);
-    else
-      ready(0)  := (not arvalid) and wvalid;
-      ready(1)  := (not arvalid) and awvalid;
-      ready(2)  := '1';
-    end if;
-
-    return ready;
-  end get_request_ready;
-
   signal  awvalid:                std_logic;
   signal  awready:                std_logic;
   signal  awid:                   std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
@@ -130,7 +110,7 @@ architecture rtl of rggen_axi4lite_adapter is
   signal  bus_read_data:          std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  bus_ack:                std_logic;
   signal  request_valid:          std_logic_vector(1 downto 0);
-  signal  request_ready:          std_logic_vector(2 downto 0);
+  signal  request_valid_lathced:  std_logic_vector(1 downto 0);
   signal  response_valid:         std_logic_vector(1 downto 0);
   signal  response_ack:           std_logic;
   signal  response_id:            std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
@@ -196,9 +176,9 @@ begin
     );
 
   --  Request
-  awready <= '1' when (bus_ready = '1') and (request_ready(0) = '1') and (response_valid = "00") else '0';
-  wready  <= '1' when (bus_ready = '1') and (request_ready(1) = '1') and (response_valid = "00") else '0';
-  arready <= '1' when (bus_ready = '1') and (request_ready(2) = '1') and (response_valid = "00") else '0';
+  awready <= '1' when (bus_ready = '1') and (request_valid(0) = '1') and (response_valid = "00") else '0';
+  wready  <= '1' when (bus_ready = '1') and (request_valid(0) = '1') and (response_valid = "00") else '0';
+  arready <= '1' when (bus_ready = '1') and (request_valid(1) = '1') and (response_valid = "00") else '0';
 
   bus_valid       <= '1' when (request_valid /= "00") and (response_valid = "00") else '0';
   bus_access      <= RGGEN_WRITE when (request_valid(0) = '1') else RGGEN_READ;
@@ -207,8 +187,21 @@ begin
   bus_strobe      <= wstrb;
   bus_ack         <= bus_valid and bus_ready;
 
-  request_valid <= get_request_valid(awvalid, wvalid, arvalid);
-  request_ready <= get_request_ready(awvalid, wvalid, arvalid);
+  request_valid <=
+    request_valid_lathced when (request_valid_lathced /= "00") else
+    get_request_valid(awvalid, wvalid, arvalid);
+
+  process (i_clk, i_rst_n) begin
+    if (i_rst_n = '0') then
+      request_valid_lathced <= "00";
+    elsif (rising_edge(i_clk)) then
+      if (bus_ready = '1') then
+        request_valid_lathced <= "00";
+      elsif (bus_valid = '1') then
+        request_valid_lathced <= request_valid;
+      end if;
+    end if;
+  end process;
 
   -- Response
   bvalid  <= response_valid(0);
