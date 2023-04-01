@@ -64,6 +64,22 @@ architecture rtl of rggen_adapter_common is
     end if;
   end decode_address;
 
+  function get_local_address (
+    bus_address:  std_logic_vector
+  ) return std_logic_vector is
+    variable  begin_address:  unsigned(ADDRESS_WIDTH - 1 downto 0);
+    variable  local_address:  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
+  begin
+    begin_address := resize(BASE_ADDRESS, ADDRESS_WIDTH);
+    if (begin_address(LOCAL_ADDRESS_WIDTH - 1 downto 0) = 0) then
+      local_address := bus_address;
+    else
+      local_address := std_logic_vector(unsigned(bus_address) - begin_address);
+    end if;
+
+    return local_address(LOCAL_ADDRESS_WIDTH - 1 downto 0);
+  end get_local_address;
+
   function get_bus_ready (
     decode_error:   std_logic;
     register_ready: std_logic_vector
@@ -118,7 +134,7 @@ begin
   --  request
   o_register_valid      <= i_bus_valid and inside_range and (not busy);
   o_register_access     <= i_bus_access;
-  o_register_address    <= i_bus_address(LOCAL_ADDRESS_WIDTH - 1 downto 0);
+  o_register_address    <= get_local_address(i_bus_address);
   o_register_write_data <= i_bus_write_data;
   o_register_strobe     <= i_bus_strobe;
 
