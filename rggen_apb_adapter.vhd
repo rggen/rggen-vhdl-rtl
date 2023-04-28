@@ -13,7 +13,8 @@ entity rggen_apb_adaper is
     PRE_DECODE:           boolean   := false;
     BASE_ADDRESS:         unsigned  := x"0";
     BYTE_SIZE:            positive  := 256;
-    ERROR_STATUS:         boolean   := false
+    ERROR_STATUS:         boolean   := false;
+    INSERT_SLICER:        boolean   := false
   );
   port (
     i_clk:                  in  std_logic;
@@ -91,7 +92,8 @@ begin
       PRE_DECODE          => PRE_DECODE,
       BASE_ADDRESS        => BASE_ADDRESS,
       BYTE_SIZE           => BYTE_SIZE,
-      ERROR_STATUS        => ERROR_STATUS
+      ERROR_STATUS        => ERROR_STATUS,
+      INSERT_SLICER       => INSERT_SLICER
     )
     port map (
       i_clk                 => i_clk,

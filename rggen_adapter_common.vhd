@@ -13,7 +13,8 @@ entity rggen_adapter_common is
     PRE_DECODE:           boolean   := false;
     BASE_ADDRESS:         unsigned  := x"0";
     BYTE_SIZE:            positive  := 256;
-    ERROR_STATUS:         boolean   := false
+    ERROR_STATUS:         boolean   := false;
+    INSERT_SLICER:        boolean   := false
   );
   port (
     i_clk:                  in  std_logic;
@@ -81,11 +82,14 @@ architecture rtl of rggen_adapter_common is
   end get_local_address;
 
   function get_bus_ready (
+    bus_busy:       std_logic;
     decode_error:   std_logic;
     register_ready: std_logic_vector
   ) return std_logic is
   begin
-    if (decode_error = '1') then
+    if (INSERT_SLICER and (bus_busy = '0')) then
+      return '0';
+    elsif (decode_error = '1') then
       return '1';
     elsif (unsigned(register_ready) /= 0) then
       return '1';
@@ -132,11 +136,57 @@ begin
   inside_range  <= decode_address(i_bus_address);
 
   --  request
-  o_register_valid      <= i_bus_valid and inside_range and (not busy);
-  o_register_access     <= i_bus_access;
-  o_register_address    <= get_local_address(i_bus_address);
-  o_register_write_data <= i_bus_write_data;
-  o_register_strobe     <= i_bus_strobe;
+  g_request_slicer: if (INSERT_SLICER) generate
+    g: block
+      signal  bus_valid:      std_logic;
+      signal  bus_access:     std_logic_vector(1 downto 0);
+      signal  bus_address:    std_logic_vector(LOCAL_ADDRESS_WIDTH - 1 downto 0);
+      signal  bus_write_data: std_logic_vector(BUS_WIDTH - 1 downto 0);
+      signal  bus_strobe:     std_logic_vector((BUS_WIDTH / 8) - 1 downto 0);
+    begin
+      o_register_valid      <= bus_valid;
+      o_register_access     <= bus_access;
+      o_register_address    <= bus_address;
+      o_register_write_data <= bus_write_data;
+      o_register_strobe     <= bus_strobe;
+
+      process (i_clk, i_rst_n) begin
+        if (i_rst_n = '0') then
+          bus_valid <= '0';
+        elsif (rising_edge(i_clk)) then
+          if (busy = '0') then
+            bus_valid <= i_bus_valid and inside_range;
+          else
+            bus_valid <= '0';
+          end if;
+        end if;
+      end process;
+
+      process (i_clk, i_rst_n) begin
+        if (i_rst_n = '0') then
+          bus_access      <= "00";
+          bus_address     <= (others => '0');
+          bus_write_data  <= (others => '0');
+          bus_strobe      <= (others => '0');
+        elsif (rising_edge(i_clk)) then
+          if ((i_bus_valid = '1') and (busy = '0')) then
+            bus_access      <= i_bus_access;
+            bus_address     <= get_local_address(i_bus_address);
+            bus_write_data  <= i_bus_write_data;
+            bus_strobe      <= i_bus_strobe;
+          end if;
+        end if;
+      end process;
+    end block;
+  end generate;
+
+  g_no_request_slicer: if (not INSERT_SLICER) generate
+    o_register_valid      <= i_bus_valid and inside_range and (not busy);
+    o_register_access     <= i_bus_access;
+    o_register_address    <= get_local_address(i_bus_address);
+    o_register_write_data <= i_bus_write_data;
+    o_register_strobe     <= i_bus_strobe;
+  end generate;
 
   --  response
   o_bus_ready     <= bus_ready;
@@ -145,5 +195,5 @@ begin
 
   active        <= i_register_active when inside_range = '1' else (others => '0');
   decode_error  <= '1' when unsigned(active) = 0 else '0';
-  bus_ready     <= get_bus_ready(decode_error, i_register_ready);
+  bus_ready     <= get_bus_ready(busy, decode_error, i_register_ready);
 end rtl;

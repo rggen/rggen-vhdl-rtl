@@ -14,6 +14,7 @@ entity rggen_wishbone_adapter is
     BASE_ADDRESS:         unsigned  := x"0";
     BYTE_SIZE:            positive  := 256;
     ERROR_STATUS:         boolean   := false;
+    INSERT_SLICER:        boolean   := false;
     USE_STALL:            boolean   := true
   );
   port (
@@ -148,7 +149,8 @@ begin
       PRE_DECODE          => PRE_DECODE,
       BASE_ADDRESS        => BASE_ADDRESS,
       BYTE_SIZE           => BYTE_SIZE,
-      ERROR_STATUS        => ERROR_STATUS
+      ERROR_STATUS        => ERROR_STATUS,
+      INSERT_SLICER       => INSERT_SLICER
     )
     port map (
       i_clk                 => i_clk,
