@@ -11,8 +11,7 @@ entity rggen_default_register is
     ADDRESS_WIDTH:  positive  := 8;
     OFFSET_ADDRESS: unsigned  := x"0";
     BUS_WIDTH:      positive  := 32;
-    DATA_WIDTH:     positive  := 32;
-    REGISTER_INDEX: natural   := 0
+    DATA_WIDTH:     positive  := 32
   );
   port (
     i_clk:                  in  std_logic;
@@ -45,8 +44,7 @@ begin
       ADDRESS_WIDTH   => ADDRESS_WIDTH,
       OFFSET_ADDRESS  => OFFSET_ADDRESS,
       BUS_WIDTH       => BUS_WIDTH,
-      DATA_WIDTH      => DATA_WIDTH,
-      REGISTER_INDEX  => REGISTER_INDEX
+      DATA_WIDTH      => DATA_WIDTH
     )
     port map (
       i_clk                   => i_clk,

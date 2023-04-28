@@ -49,8 +49,7 @@ begin
       ADDRESS_WIDTH   => ADDRESS_WIDTH,
       OFFSET_ADDRESS  => OFFSET_ADDRESS,
       BUS_WIDTH       => BUS_WIDTH,
-      DATA_WIDTH      => DATA_WIDTH,
-      REGISTER_INDEX  => 0
+      DATA_WIDTH      => DATA_WIDTH
     )
     port map (
       i_clk                   => i_clk,

@@ -11,8 +11,7 @@ entity rggen_register_common is
     ADDRESS_WIDTH:  positive  := 8;
     OFFSET_ADDRESS: unsigned  := x"0";
     BUS_WIDTH:      positive  := 32;
-    DATA_WIDTH:     positive  := 32;
-    REGISTER_INDEX: natural   := 0
+    DATA_WIDTH:     positive  := 32
   );
   port (
     i_clk:                  in  std_logic;
@@ -68,7 +67,7 @@ architecture rtl of rggen_register_common is
     variable  byte_offset:    integer;
     variable  start_address:  unsigned(offset_address'range);
   begin
-    byte_offset   := (DATA_BYTE_WIDTH * REGISTER_INDEX) + (BUS_BYTE_WIDTH * index);
+    byte_offset   := BUS_BYTE_WIDTH * index;
     start_address := offset_address + byte_offset;
     return start_address;
   end calc_start_address;
