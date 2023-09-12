@@ -20,7 +20,7 @@ entity rggen_default_register is
     i_register_access:      in  std_logic_vector(1 downto 0);
     i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_register_write_data:  in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    i_register_strobe:      in  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+    i_register_strobe:      in  std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_register_active:      out std_logic;
     o_register_ready:       out std_logic;
     o_register_status:      out std_logic_vector(1 downto 0);

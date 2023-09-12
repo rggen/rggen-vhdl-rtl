@@ -20,7 +20,7 @@ entity rggen_register_common is
     i_register_access:      in  std_logic_vector(1 downto 0);
     i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_register_write_data:  in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    i_register_strobe:      in  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+    i_register_strobe:      in  std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_register_active:      out std_logic;
     o_register_ready:       out std_logic;
     o_register_status:      out std_logic_vector(1 downto 0);
@@ -103,15 +103,13 @@ architecture rtl of rggen_register_common is
     end if;
 
     for i in 0 to WORDS - 1 loop
-      for j in 0 to BUS_BYTE_WIDTH - 1 loop
-        lsb := BUS_WIDTH * i + 8 * j;
-        msb := lsb + 7;
-        if (accessible and match_access and (match(i) = '1')) then
-          mask(msb downto lsb)  := (others => strobe(j));
-        else
-          mask(msb downto lsb)  := (others => '0');
-        end if;
-      end loop;
+      lsb := BUS_WIDTH * (i + 0) - 0;
+      msb := BUS_WIDTH * (i + 1) - 1;
+      if (accessible and match_access and (match(i) = '1')) then
+        mask(msb downto lsb)  := strobe;
+      else
+        mask(msb downto lsb)  := (others => '0');
+      end if;
     end loop;
 
     return mask;
@@ -134,7 +132,7 @@ architecture rtl of rggen_register_common is
   signal  backdoor_valid:   std_logic;
   signal  pending_valid:    std_logic;
   signal  register_ready:   std_logic;
-  signal  read_strobe:      std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+  signal  read_strobe:      std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  read_mask_0:      std_logic_vector(DATA_WIDTH - 1 downto 0);
   signal  read_mask_1:      std_logic_vector(DATA_WIDTH - 1 downto 0);
   signal  write_mask_0:     std_logic_vector(DATA_WIDTH - 1 downto 0);

@@ -9,6 +9,7 @@ entity rggen_adapter_common is
     ADDRESS_WIDTH:        positive  := 8;
     LOCAL_ADDRESS_WIDTH:  positive  := 8;
     BUS_WIDTH:            positive  := 32;
+    STROBE_WIDTH:         positive  := 4;
     REGISTERS:            positive  := 1;
     PRE_DECODE:           boolean   := false;
     BASE_ADDRESS:         unsigned  := x"0";
@@ -23,7 +24,7 @@ entity rggen_adapter_common is
     i_bus_access:           in  std_logic_vector(1 downto 0);
     i_bus_address:          in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_bus_write_data:       in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    i_bus_strobe:           in  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+    i_bus_strobe:           in  std_logic_vector(STROBE_WIDTH - 1 downto 0);
     o_bus_ready:            out std_logic;
     o_bus_status:           out std_logic_vector(1 downto 0);
     o_bus_read_data:        out std_logic_vector(BUS_WIDTH - 1 downto 0);
@@ -31,7 +32,7 @@ entity rggen_adapter_common is
     o_register_access:      out std_logic_vector(1 downto 0);
     o_register_address:     out std_logic_vector(LOCAL_ADDRESS_WIDTH - 1 downto 0);
     o_register_write_data:  out std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_register_strobe:      out std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+    o_register_strobe:      out std_logic_vector(BUS_WIDTH - 1 downto 0);
     i_register_active:      in  std_logic_vector(1 * REGISTERS - 1 downto 0);
     i_register_ready:       in  std_logic_vector(1 * REGISTERS - 1 downto 0);
     i_register_status:      in  std_logic_vector(2 * REGISTERS - 1 downto 0);
@@ -80,6 +81,21 @@ architecture rtl of rggen_adapter_common is
 
     return local_address(LOCAL_ADDRESS_WIDTH - 1 downto 0);
   end get_local_address;
+
+  function get_register_strobe (
+    strobe: std_logic_vector
+  ) return std_logic_vector is
+    variable  register_strobe: std_logic_vector(BUS_WIDTH - 1 downto 0);
+  begin
+    if strobe'length = BUS_WIDTH then
+      register_strobe(STROBE_WIDTH - 1 downto 0)  := strobe;
+    else
+      for i in 0 to STROBE_WIDTH - 1 loop
+        register_strobe(8 * i + 7 downto 8 * i) := (others => strobe(i));
+      end loop;
+    end if;
+    return register_strobe;
+  end get_register_strobe;
 
   function get_bus_ready (
     bus_busy:       std_logic;
@@ -142,13 +158,13 @@ begin
       signal  bus_access:     std_logic_vector(1 downto 0);
       signal  bus_address:    std_logic_vector(LOCAL_ADDRESS_WIDTH - 1 downto 0);
       signal  bus_write_data: std_logic_vector(BUS_WIDTH - 1 downto 0);
-      signal  bus_strobe:     std_logic_vector((BUS_WIDTH / 8) - 1 downto 0);
+      signal  bus_strobe:     std_logic_vector(STROBE_WIDTH - 1 downto 0);
     begin
       o_register_valid      <= bus_valid;
       o_register_access     <= bus_access;
       o_register_address    <= bus_address;
       o_register_write_data <= bus_write_data;
-      o_register_strobe     <= bus_strobe;
+      o_register_strobe     <= get_register_strobe(bus_strobe);
 
       process (i_clk, i_rst_n) begin
         if (i_rst_n = '0') then
@@ -185,7 +201,7 @@ begin
     o_register_access     <= i_bus_access;
     o_register_address    <= get_local_address(i_bus_address);
     o_register_write_data <= i_bus_write_data;
-    o_register_strobe     <= i_bus_strobe;
+    o_register_strobe     <= get_register_strobe(i_bus_strobe);
   end generate;
 
   --  response
