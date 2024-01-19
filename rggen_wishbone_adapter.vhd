@@ -14,6 +14,7 @@ entity rggen_wishbone_adapter is
     BASE_ADDRESS:         unsigned  := x"0";
     BYTE_SIZE:            positive  := 256;
     ERROR_STATUS:         boolean   := false;
+    INSERT_SLICER:        boolean   := false;
     USE_STALL:            boolean   := true
   );
   port (
@@ -34,7 +35,7 @@ entity rggen_wishbone_adapter is
     o_register_access:      out std_logic_vector(1 downto 0);
     o_register_address:     out std_logic_vector(LOCAL_ADDRESS_WIDTH - 1 downto 0);
     o_register_write_data:  out std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_register_strobe:      out std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+    o_register_strobe:      out std_logic_vector(BUS_WIDTH - 1 downto 0);
     i_register_active:      in  std_logic_vector(1 * REGISTERS - 1 downto 0);
     i_register_ready:       in  std_logic_vector(1 * REGISTERS - 1 downto 0);
     i_register_status:      in  std_logic_vector(2 * REGISTERS - 1 downto 0);
@@ -144,11 +145,13 @@ begin
       ADDRESS_WIDTH       => ADDRESS_WIDTH,
       LOCAL_ADDRESS_WIDTH => LOCAL_ADDRESS_WIDTH,
       BUS_WIDTH           => BUS_WIDTH,
+      STROBE_WIDTH        => BUS_WIDTH / 8,
       REGISTERS           => REGISTERS,
       PRE_DECODE          => PRE_DECODE,
       BASE_ADDRESS        => BASE_ADDRESS,
       BYTE_SIZE           => BYTE_SIZE,
-      ERROR_STATUS        => ERROR_STATUS
+      ERROR_STATUS        => ERROR_STATUS,
+      INSERT_SLICER       => INSERT_SLICER
     )
     port map (
       i_clk                 => i_clk,

@@ -8,6 +8,7 @@ entity rggen_external_register is
   generic (
     ADDRESS_WIDTH:  positive  := 8;
     BUS_WIDTH:      positive  := 32;
+    STROBE_WIDTH:   positive  := 4;
     START_ADDRESS:  unsigned  := x"0";
     BYTE_SIZE:      positive  := 1
   );
@@ -18,7 +19,7 @@ entity rggen_external_register is
     i_register_access:      in  std_logic_vector(1 downto 0);
     i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_register_write_data:  in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    i_register_strobe:      in  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+    i_register_strobe:      in  std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_register_active:      out std_logic;
     o_register_ready:       out std_logic;
     o_register_status:      out std_logic_vector(1 downto 0);
@@ -28,7 +29,7 @@ entity rggen_external_register is
     o_external_access:      out std_logic_vector(1 downto 0);
     o_external_address:     out std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     o_external_data:        out std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_external_strobe:      out std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+    o_external_strobe:      out std_logic_vector(STROBE_WIDTH - 1 downto 0);
     i_external_ready:       in  std_logic;
     i_external_status:      in  std_logic_vector(1 downto 0);
     i_external_data:        in  std_logic_vector(BUS_WIDTH - 1 downto 0)
@@ -47,6 +48,26 @@ architecture rtl of rggen_external_register is
     return address;
   end get_external_address;
 
+  function get_bus_strobe (
+    strobe: std_logic_vector
+  ) return std_logic_vector is
+    variable  bus_strobe: std_logic_vector(STROBE_WIDTH - 1 downto 0);
+  begin
+    if STROBE_WIDTH = BUS_WIDTH then
+      bus_strobe  := strobe(STROBE_WIDTH - 1 downto 0);
+    else
+      for i in 0 to STROBE_WIDTH - 1 loop
+        if strobe(8 * i + 7 downto 8 * i) = x"00" then
+          bus_strobe(i) := '0';
+        else
+          bus_strobe(i) := '1';
+        end if;
+      end loop;
+    end if;
+
+    return bus_strobe;
+  end get_bus_strobe;
+
   signal  address_match:        std_logic;
   signal  external_start:       std_logic;
   signal  external_ack:         std_logic;
@@ -54,7 +75,7 @@ architecture rtl of rggen_external_register is
   signal  external_access:      std_logic_vector(1 downto 0);
   signal  external_address:     std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
   signal  external_write_data:  std_logic_vector(BUS_WIDTH - 1 downto 0);
-  signal  external_strobe:      std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+  signal  external_strobe:      std_logic_vector(STROBE_WIDTH - 1 downto 0);
 begin
   --  Decode address
   u_decoder: entity work.rggen_address_decoder
@@ -111,7 +132,7 @@ begin
     if (rising_edge(i_clk)) then
       if (external_start = '1') then
         external_write_data <= i_register_write_data;
-        external_strobe     <= i_register_strobe;
+        external_strobe     <= get_bus_strobe(i_register_strobe);
       end if;
     end if;
   end process;

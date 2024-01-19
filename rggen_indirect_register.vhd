@@ -21,7 +21,7 @@ entity rggen_indirect_register is
     i_register_access:      in  std_logic_vector(1 downto 0);
     i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_register_write_data:  in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    i_register_strobe:      in  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
+    i_register_strobe:      in  std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_register_active:      out std_logic;
     o_register_ready:       out std_logic;
     o_register_status:      out std_logic_vector(1 downto 0);
@@ -49,8 +49,7 @@ begin
       ADDRESS_WIDTH   => ADDRESS_WIDTH,
       OFFSET_ADDRESS  => OFFSET_ADDRESS,
       BUS_WIDTH       => BUS_WIDTH,
-      DATA_WIDTH      => DATA_WIDTH,
-      REGISTER_INDEX  => 0
+      DATA_WIDTH      => DATA_WIDTH
     )
     port map (
       i_clk                   => i_clk,
