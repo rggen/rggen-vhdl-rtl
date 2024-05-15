@@ -41,19 +41,35 @@ entity rggen_adapter_common is
 end rggen_adapter_common;
 
 architecture rtl of rggen_adapter_common is
+  function get_begin_address (
+    base_addess:  unsigned
+  ) return unsigned is
+    alias     base:           unsigned(base_addess'length - 1 downto 0) is base_addess;
+    variable  begin_address:  unsigned(ADDRESS_WIDTH - 1 downto 0);
+  begin
+    for i in 0 to ADDRESS_WIDTH - 1 loop
+      if i < BASE_ADDRESS'length then
+        begin_address(i)  := base(i);
+      else
+        begin_address(i)  := '0';
+      end if;
+
+      return begin_address;
+    end loop;
+  end get_begin_address;
+
+  constant  BEGIN_ADDRESS:  unsigned(ADDRESS_WIDTH - 1 downto 0)  := get_begin_address(BASE_ADDRESS);
+  constant  END_ADDRESS:    unsigned(ADDRESS_WIDTH - 1 downto 0)  := BEGIN_ADDRESS + BYTE_SIZE - 1;
+
   function decode_address (
     bus_address:  std_logic_vector
   ) return std_logic is
-    variable  begin_address:  unsigned(ADDRESS_WIDTH - 1 downto 0);
-    variable  end_address:    unsigned(ADDRESS_WIDTH - 1 downto 0);
-    variable  result_0:       boolean;
-    variable  result_1:       boolean;
+    variable  result_0: boolean;
+    variable  result_1: boolean;
   begin
     if (PRE_DECODE) then
-      begin_address := resize(BASE_ADDRESS, ADDRESS_WIDTH);
-      end_address   := begin_address + BYTE_SIZE - 1;
-      result_0      := unsigned(bus_address) >= begin_address;
-      result_1      := unsigned(bus_address) <= end_address;
+      result_0      := unsigned(bus_address) >= BEGIN_ADDRESS;
+      result_1      := unsigned(bus_address) <= END_ADDRESS;
     else
       result_0  := true;
       result_1  := true;
@@ -72,11 +88,10 @@ architecture rtl of rggen_adapter_common is
     variable  begin_address:  unsigned(ADDRESS_WIDTH - 1 downto 0);
     variable  local_address:  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
   begin
-    begin_address := resize(BASE_ADDRESS, ADDRESS_WIDTH);
-    if (begin_address(LOCAL_ADDRESS_WIDTH - 1 downto 0) = 0) then
+    if (BEGIN_ADDRESS(LOCAL_ADDRESS_WIDTH - 1 downto 0) = 0) then
       local_address := bus_address;
     else
-      local_address := std_logic_vector(unsigned(bus_address) - begin_address);
+      local_address := std_logic_vector(unsigned(bus_address) - BEGIN_ADDRESS);
     end if;
 
     return local_address(LOCAL_ADDRESS_WIDTH - 1 downto 0);
