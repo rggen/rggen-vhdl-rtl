@@ -42,10 +42,11 @@ architecture rtl of rggen_external_register is
   function get_external_address (
     register_address: std_logic_vector
   ) return std_logic_vector is
-    alias     base:     unsigned(START_ADDRESS'length - 1 downto 0) is START_ADDRESS;
+    variable  base:     unsigned(ADDRESS_WIDTH - 1 downto 0);
     variable  address:  std_logic_vector(register_address'range);
   begin
-    address := std_logic_vector(unsigned(register_address) - base(ADDRESS_WIDTH - 1 downto 0));
+    base    := resize(START_ADDRESS, ADDRESS_WIDTH);
+    address := std_logic_vector(unsigned(register_address) - base);
     return address;
   end get_external_address;
 
