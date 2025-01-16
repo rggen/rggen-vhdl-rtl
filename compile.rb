@@ -14,7 +14,8 @@
   'rggen_axi4lite_adapter.vhd',
   'rggen_axi4lite_bridge.vhd',
   'rggen_wishbone_adapter.vhd',
-  'rggen_wishbone_bridge.vhd'
+  'rggen_wishbone_bridge.vhd',
+  'rggen_native_adapter.vhd',
 ].each { |file| source_file file }
 
 unless macro_defined? :RGGEN_ENABLE_BACKDOOR

@@ -14,3 +14,4 @@ ${RGGEN_VHDL_RTL_ROOT}/rggen_axi4lite_adapter.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_axi4lite_bridge.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_wishbone_adapter.vhd
 ${RGGEN_VHDL_RTL_ROOT}/rggen_wishbone_bridge.vhd
+${RGGEN_VHDL_RTL_ROOT}/rggen_native_adapter.vhd
