@@ -132,7 +132,6 @@ architecture rtl of rggen_register_common is
   signal  backdoor_valid:   std_logic;
   signal  pending_valid:    std_logic;
   signal  register_ready:   std_logic;
-  signal  read_strobe:      std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  read_mask_0:      std_logic_vector(DATA_WIDTH - 1 downto 0);
   signal  read_mask_1:      std_logic_vector(DATA_WIDTH - 1 downto 0);
   signal  write_mask_0:     std_logic_vector(DATA_WIDTH - 1 downto 0);
@@ -171,8 +170,7 @@ begin
   o_bit_field_write_data  <= write_data_1 when backdoor_valid = '1' else write_data_0;
 
   frontdoor_valid <= i_register_valid and active;
-  read_strobe     <= (others => '1');
-  read_mask_0     <= get_mask(false, READABLE, match, i_register_access, read_strobe);
+  read_mask_0     <= get_mask(false, READABLE, match, i_register_access, i_register_strobe);
   write_mask_0    <= get_mask(true , WRITABLE, match, i_register_access, i_register_strobe);
   write_data_0    <= get_write_data(i_register_write_data);
 

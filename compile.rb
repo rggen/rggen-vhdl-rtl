@@ -13,6 +13,8 @@
   'rggen_axi4lite_skid_buffer.vhd',
   'rggen_axi4lite_adapter.vhd',
   'rggen_axi4lite_bridge.vhd',
+  'rggen_avalon_adapter.vhd',
+  'rggen_avalon_bridge.vhd',
   'rggen_wishbone_adapter.vhd',
   'rggen_wishbone_bridge.vhd',
   'rggen_native_adapter.vhd',

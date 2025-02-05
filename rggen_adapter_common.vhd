@@ -14,6 +14,7 @@ entity rggen_adapter_common is
     PRE_DECODE:           boolean   := false;
     BASE_ADDRESS:         unsigned  := x"0";
     BYTE_SIZE:            positive  := 256;
+    USE_READ_STROBE:      boolean   := false;
     ERROR_STATUS:         boolean   := false;
     INSERT_SLICER:        boolean   := false
   );
@@ -83,15 +84,18 @@ architecture rtl of rggen_adapter_common is
   end get_local_address;
 
   function get_register_strobe (
-    strobe: std_logic_vector
+    bus_access: std_logic_vector;
+    bus_strobe: std_logic_vector
   ) return std_logic_vector is
     variable  register_strobe: std_logic_vector(BUS_WIDTH - 1 downto 0);
   begin
-    if strobe'length = BUS_WIDTH then
-      register_strobe(STROBE_WIDTH - 1 downto 0)  := strobe;
+    if (bus_access = RGGEN_READ) and (not USE_READ_STROBE) then
+      register_strobe := (others => '1');
+    elsif bus_strobe'length = BUS_WIDTH then
+      register_strobe(STROBE_WIDTH - 1 downto 0)  := bus_strobe;
     else
       for i in 0 to STROBE_WIDTH - 1 loop
-        register_strobe(8 * i + 7 downto 8 * i) := (others => strobe(i));
+        register_strobe(8 * i + 7 downto 8 * i) := (others => bus_strobe(i));
       end loop;
     end if;
     return register_strobe;
@@ -164,7 +168,7 @@ begin
       o_register_access     <= bus_access;
       o_register_address    <= bus_address;
       o_register_write_data <= bus_write_data;
-      o_register_strobe     <= get_register_strobe(bus_strobe);
+      o_register_strobe     <= get_register_strobe(bus_access, bus_strobe);
 
       process (i_clk, i_rst_n) begin
         if (i_rst_n = '0') then
@@ -201,7 +205,7 @@ begin
     o_register_access     <= i_bus_access;
     o_register_address    <= get_local_address(i_bus_address);
     o_register_write_data <= i_bus_write_data;
-    o_register_strobe     <= get_register_strobe(i_bus_strobe);
+    o_register_strobe     <= get_register_strobe(i_bus_access, i_bus_strobe);
   end generate;
 
   --  response

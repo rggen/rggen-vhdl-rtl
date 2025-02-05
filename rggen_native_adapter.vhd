@@ -14,6 +14,7 @@ entity rggen_native_adapter is
     PRE_DECODE:           boolean   := false;
     BASE_ADDRESS:         unsigned  := x"0";
     BYTE_SIZE:            positive  := 256;
+    USE_READ_STROBE:      boolean   := false;
     ERROR_STATUS:         boolean   := false;
     INSERT_SLICER:        boolean   := false
   );
@@ -92,6 +93,7 @@ begin
       PRE_DECODE          => PRE_DECODE,
       BASE_ADDRESS        => BASE_ADDRESS,
       BYTE_SIZE           => BYTE_SIZE,
+      USE_READ_STROBE     => USE_READ_STROBE,
       ERROR_STATUS        => ERROR_STATUS,
       INSERT_SLICER       => INSERT_SLICER
     )
