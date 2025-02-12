@@ -42,12 +42,7 @@ entity rggen_avalon_adapter is
 end rggen_avalon_adapter;
 
 architecture rtl of rggen_avalon_adapter is
-  signal  request_valid:  std_logic_vector(1 downto 0);
-  signal  request_read:   std_logic;
-  signal  address:        std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-  signal  byteenable:     std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
-  signal  writedata:      std_logic_vector(BUS_WIDTH - 1 downto 0);
-  signal  response_valid: std_logic_vector(1 downto 0);
+  signal  waitrequest:    std_logic;
   signal  response:       std_logic_vector(1 downto 0);
   signal  readdata:       std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  bus_valid:      std_logic;
@@ -59,62 +54,24 @@ architecture rtl of rggen_avalon_adapter is
   signal  bus_status:     std_logic_vector(1 downto 0);
   signal  bus_read_data:  std_logic_vector(BUS_WIDTH - 1 downto 0);
 begin
-  o_waitrequest         <= request_valid(1);
-  o_readdatavalid       <= response_valid(0);
-  o_writeresponsevalid  <= response_valid(1);
-  o_response            <= response;
-  o_readdata            <= readdata;
+  bus_valid       <= (i_read or i_write) and waitrequest;
+  bus_access      <= RGGEN_READ when (i_read = '1') else RGGEN_WRITE;
+  bus_address     <= i_address;
+  bus_write_data  <= i_writedata;
+  bus_strobe      <= i_byteenable;
 
-  bus_valid       <= '1' when (request_valid /= "00") else '0';
-  bus_access      <= RGGEN_READ  when (request_valid(1) = '1') and (request_read = '1') else
-                     RGGEN_WRITE when (request_valid(1) = '1') and (request_read = '0') else
-                     RGGEN_READ  when (i_read           = '1') else
-                     RGGEN_WRITE;
-  bus_address     <= address    when (request_valid(1) = '1') else i_address;
-  bus_write_data  <= writedata  when (request_valid(1) = '1') else i_writedata;
-  bus_strobe      <= byteenable when (request_valid(1) = '1') else i_byteenable;
+  o_waitrequest <= waitrequest;
+  o_response    <= response;
+  o_readdata    <= readdata;
 
-  request_valid(0)  <= i_read or i_write;
   process (i_clk, i_rst_n) begin
     if (i_rst_n = '0') then
-      request_valid(1)  <= '0';
+      waitrequest <= '1';
     elsif (rising_edge(i_clk)) then
       if ((bus_valid and bus_ready) = '1') then
-        request_valid(1)  <= '0';
-      elsif (request_valid(1) = '0') then
-        request_valid(1)  <= request_valid(0);
-      end if;
-    end if;
-  end process;
-
-  process (i_clk, i_rst_n) begin
-    if (i_rst_n = '0') then
-      request_read  <= '0';
-      address       <= (others => '0');
-      byteenable    <= (others => '0');
-      writedata     <= (others => '0');
-    elsif (rising_edge(i_clk)) then
-      if (request_valid = "01") then
-        request_read  <= i_read;
-        address       <= i_address;
-        byteenable    <= i_byteenable;
-        writedata     <= i_writedata;
-      end if;
-    end if;
-  end process;
-
-  process (i_clk, i_rst_n) begin
-    if (i_rst_n = '0') then
-      response_valid  <= "00";
-    elsif (rising_edge(i_clk)) then
-      if ((bus_valid and bus_ready) = '1') then
-        if (bus_access = RGGEN_READ) then
-          response_valid  <= "01";
-        else
-          response_valid  <= "10";
-        end if;
+        waitrequest <= '0';
       else
-        response_valid  <= "00";
+        waitrequest <= '1';
       end if;
     end if;
   end process;
