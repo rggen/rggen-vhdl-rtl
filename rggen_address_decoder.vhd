@@ -6,12 +6,13 @@ use work.rggen_rtl.all;
 
 entity rggen_address_decoder is
   generic (
-    READABLE:       boolean   := true;
-    WRITABLE:       boolean   := true;
-    ADDRESS_WIDTH:  positive  := 8;
-    BUS_WIDTH:      positive  := 32;
-    START_ADDRESS:  unsigned  := x"0";
-    END_ADDRESS:    unsigned  := x"0"
+    READABLE:             boolean   := true;
+    WRITABLE:             boolean   := true;
+    ADDRESS_WIDTH:        positive  := 8;
+    BUS_WIDTH:            positive  := 32;
+    START_ADDRESS:        unsigned  := x"0";
+    END_ADDRESS:          unsigned  := x"0";
+    USE_ADDITIONAL_MATCH: boolean   := false
   );
   port (
     i_address:          in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
@@ -75,9 +76,11 @@ architecture rtl of rggen_address_decoder is
 
   signal  address_matched:  std_logic;
   signal  access_matched:   std_logic;
+  signal  additional_match: std_logic;
 begin
-  o_match <= address_matched and access_matched and i_additional_match;
+  o_match <= address_matched and access_matched and i_additional_match and additional_match;
 
-  address_matched <= match_address(i_address);
-  access_matched  <= match_access(i_access(DIRECTION_BIT));
+  address_matched   <= match_address(i_address);
+  access_matched    <= match_access(i_access(DIRECTION_BIT));
+  additional_match  <= i_additional_match when USE_ADDITIONAL_MATCH else '1';
 end rtl;

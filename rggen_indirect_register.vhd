@@ -15,25 +15,25 @@ entity rggen_indirect_register is
     INDIRECT_MATCH_WIDTH: positive  := 1
   );
   port (
-    i_clk:                  in  std_logic;
-    i_rst_n:                in  std_logic;
-    i_register_valid:       in  std_logic;
-    i_register_access:      in  std_logic_vector(1 downto 0);
-    i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-    i_register_write_data:  in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    i_register_strobe:      in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_register_active:      out std_logic;
-    o_register_ready:       out std_logic;
-    o_register_status:      out std_logic_vector(1 downto 0);
-    o_register_read_data:   out std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_register_value:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    i_indirect_match:       in  std_logic_vector(INDIRECT_MATCH_WIDTH - 1 downto 0);
-    o_bit_field_valid:      out std_logic;
-    o_bit_field_read_mask:  out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    o_bit_field_write_mask: out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    o_bit_field_write_data: out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    i_bit_field_read_data:  in  std_logic_vector(DATA_WIDTH - 1 downto 0);
-    i_bit_field_value:      in  std_logic_vector(DATA_WIDTH - 1 downto 0)
+    i_clk:                    in  std_logic;
+    i_rst_n:                  in  std_logic;
+    i_register_valid:         in  std_logic;
+    i_register_access:        in  std_logic_vector(1 downto 0);
+    i_register_address:       in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
+    i_register_write_data:    in  std_logic_vector(BUS_WIDTH - 1 downto 0);
+    i_register_strobe:        in  std_logic_vector(BUS_WIDTH - 1 downto 0);
+    o_register_active:        out std_logic;
+    o_register_ready:         out std_logic;
+    o_register_status:        out std_logic_vector(1 downto 0);
+    o_register_read_data:     out std_logic_vector(BUS_WIDTH - 1 downto 0);
+    o_register_value:         out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_indirect_match:         in  std_logic_vector(INDIRECT_MATCH_WIDTH - 1 downto 0);
+    o_bit_field_read_valid:   out std_logic;
+    o_bit_field_write_valid:  out std_logic;
+    o_bit_field_mask:         out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    o_bit_field_write_data:   out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_bit_field_read_data:    in  std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_bit_field_value:        in  std_logic_vector(DATA_WIDTH - 1 downto 0)
   );
 end rggen_indirect_register;
 
@@ -44,12 +44,13 @@ begin
 
   u_register_common: entity work.rggen_register_common
     generic map (
-      READABLE        => READABLE,
-      WRITABLE        => WRITABLE,
-      ADDRESS_WIDTH   => ADDRESS_WIDTH,
-      OFFSET_ADDRESS  => OFFSET_ADDRESS,
-      BUS_WIDTH       => BUS_WIDTH,
-      DATA_WIDTH      => DATA_WIDTH
+      READABLE              => READABLE,
+      WRITABLE              => WRITABLE,
+      ADDRESS_WIDTH         => ADDRESS_WIDTH,
+      OFFSET_ADDRESS        => OFFSET_ADDRESS,
+      BUS_WIDTH             => BUS_WIDTH,
+      DATA_WIDTH            => DATA_WIDTH,
+      USE_ADDITIONAL_MATCH  => true
     )
     port map (
       i_clk                   => i_clk,
@@ -65,9 +66,9 @@ begin
       o_register_read_data    => o_register_read_data,
       o_register_value        => o_register_value,
       i_additional_match      => additional_match,
-      o_bit_field_valid       => o_bit_field_valid,
-      o_bit_field_read_mask   => o_bit_field_read_mask,
-      o_bit_field_write_mask  => o_bit_field_write_mask,
+      o_bit_field_read_valid  => o_bit_field_read_valid,
+      o_bit_field_write_valid => o_bit_field_write_valid,
+      o_bit_field_mask        => o_bit_field_mask,
       o_bit_field_write_data  => o_bit_field_write_data,
       i_bit_field_read_data   => i_bit_field_read_data,
       i_bit_field_value       => i_bit_field_value

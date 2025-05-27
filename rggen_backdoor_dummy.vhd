@@ -15,8 +15,8 @@ entity rggen_backdoor is
     i_frontdoor_ready:  in  std_logic;
     o_backdoor_valid:   out std_logic;
     o_pending_valid:    out std_logic;
-    o_read_mask:        out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    o_write_mask:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    o_write:            out std_logic;
+    o_mask:             out std_logic_vector(DATA_WIDTH - 1 downto 0);
     o_write_data:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
     i_read_data:        in  std_logic_vector(DATA_WIDTH - 1 downto 0);
     i_value:            in  std_logic_vector(DATA_WIDTH - 1 downto 0)
@@ -27,7 +27,7 @@ architecture rtl of rggen_backdoor is
 begin
   o_backdoor_valid  <= '0';
   o_pending_valid   <= '0';
-  o_read_mask       <= (others => '0');
-  o_write_mask      <= (others => '0');
+  o_write           <= '0';
+  o_mask            <= (others => '0');
   o_write_data      <= (others => '0');
 end rtl;

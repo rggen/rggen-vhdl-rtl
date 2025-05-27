@@ -6,33 +6,34 @@ use work.rggen_rtl.all;
 
 entity rggen_register_common is
   generic (
-    READABLE:       boolean   := true;
-    WRITABLE:       boolean   := true;
-    ADDRESS_WIDTH:  positive  := 8;
-    OFFSET_ADDRESS: unsigned  := x"0";
-    BUS_WIDTH:      positive  := 32;
-    DATA_WIDTH:     positive  := 32
+    READABLE:             boolean   := true;
+    WRITABLE:             boolean   := true;
+    ADDRESS_WIDTH:        positive  := 8;
+    OFFSET_ADDRESS:       unsigned  := x"0";
+    BUS_WIDTH:            positive  := 32;
+    DATA_WIDTH:           positive  := 32;
+    USE_ADDITIONAL_MATCH: boolean   := false
   );
   port (
-    i_clk:                  in  std_logic;
-    i_rst_n:                in  std_logic;
-    i_register_valid:       in  std_logic;
-    i_register_access:      in  std_logic_vector(1 downto 0);
-    i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-    i_register_write_data:  in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    i_register_strobe:      in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_register_active:      out std_logic;
-    o_register_ready:       out std_logic;
-    o_register_status:      out std_logic_vector(1 downto 0);
-    o_register_read_data:   out std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_register_value:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    i_additional_match:     in  std_logic;
-    o_bit_field_valid:      out std_logic;
-    o_bit_field_read_mask:  out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    o_bit_field_write_mask: out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    o_bit_field_write_data: out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    i_bit_field_read_data:  in  std_logic_vector(DATA_WIDTH - 1 downto 0);
-    i_bit_field_value:      in  std_logic_vector(DATA_WIDTH - 1 downto 0)
+    i_clk:                    in  std_logic;
+    i_rst_n:                  in  std_logic;
+    i_register_valid:         in  std_logic;
+    i_register_access:        in  std_logic_vector(1 downto 0);
+    i_register_address:       in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
+    i_register_write_data:    in  std_logic_vector(BUS_WIDTH - 1 downto 0);
+    i_register_strobe:        in  std_logic_vector(BUS_WIDTH - 1 downto 0);
+    o_register_active:        out std_logic;
+    o_register_ready:         out std_logic;
+    o_register_status:        out std_logic_vector(1 downto 0);
+    o_register_read_data:     out std_logic_vector(BUS_WIDTH - 1 downto 0);
+    o_register_value:         out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_additional_match:       in  std_logic;
+    o_bit_field_read_valid:   out std_logic;
+    o_bit_field_write_valid:  out std_logic;
+    o_bit_field_mask:         out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    o_bit_field_write_data:   out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_bit_field_read_data:    in  std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_bit_field_value:        in  std_logic_vector(DATA_WIDTH - 1 downto 0)
   );
 end rggen_register_common;
 
@@ -48,8 +49,8 @@ architecture rtl of rggen_register_common is
       i_frontdoor_ready:  in  std_logic;
       o_backdoor_valid:   out std_logic;
       o_pending_valid:    out std_logic;
-      o_read_mask:        out std_logic_vector(DATA_WIDTH - 1 downto 0);
-      o_write_mask:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
+      o_write:            out std_logic;
+      o_mask:             out std_logic_vector(DATA_WIDTH - 1 downto 0);
       o_write_data:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
       i_read_data:        in  std_logic_vector(DATA_WIDTH - 1 downto 0);
       i_value:            in  std_logic_vector(DATA_WIDTH - 1 downto 0)
@@ -85,32 +86,26 @@ architecture rtl of rggen_register_common is
   end calc_end_address;
 
   function get_mask (
-    write_access:     boolean;
-    accessible:       boolean;
-    match:            std_logic_vector;
-    register_access:  std_logic_vector(1 downto 0);
-    strobe:           std_logic_vector
+    match:  std_logic_vector;
+    strobe: std_logic_vector
   ) return std_logic_vector is
-    variable  match_access: boolean;
-    variable  mask:         std_logic_vector(DATA_WIDTH - 1 downto 0);
-    variable  msb:          integer;
-    variable  lsb:          integer;
+    variable  mask: std_logic_vector(DATA_WIDTH - 1 downto 0);
+    variable  msb:  integer;
+    variable  lsb:  integer;
   begin
-    if (write_access) then
-      match_access  := register_access(RGGEN_ACCESS_DATA_BIT) = '1';
+    if (BUS_WIDTH = DATA_WIDTH) then
+      mask  := strobe;
     else
-      match_access  := register_access(RGGEN_ACCESS_DATA_BIT) = '0';
+      for i in 0 to WORDS - 1 loop
+        lsb := BUS_WIDTH * (i + 0) - 0;
+        msb := BUS_WIDTH * (i + 1) - 1;
+        if (match(i) = '1') then
+          mask(msb downto lsb)  := strobe;
+        else
+          mask(msb downto lsb)  := (others => '0');
+        end if;
+      end loop;
     end if;
-
-    for i in 0 to WORDS - 1 loop
-      lsb := BUS_WIDTH * (i + 0) - 0;
-      msb := BUS_WIDTH * (i + 1) - 1;
-      if (accessible and match_access and (match(i) = '1')) then
-        mask(msb downto lsb)  := strobe;
-      else
-        mask(msb downto lsb)  := (others => '0');
-      end if;
-    end loop;
 
     return mask;
   end get_mask;
@@ -126,20 +121,19 @@ architecture rtl of rggen_register_common is
     return data;
   end get_write_data;
 
-  signal  match:            std_logic_vector(WORDS - 1 downto 0);
-  signal  active:           std_logic;
-  signal  frontdoor_valid:  std_logic;
-  signal  backdoor_valid:   std_logic;
-  signal  pending_valid:    std_logic;
-  signal  register_ready:   std_logic;
-  signal  read_mask_0:      std_logic_vector(DATA_WIDTH - 1 downto 0);
-  signal  read_mask_1:      std_logic_vector(DATA_WIDTH - 1 downto 0);
-  signal  write_mask_0:     std_logic_vector(DATA_WIDTH - 1 downto 0);
-  signal  write_mask_1:     std_logic_vector(DATA_WIDTH - 1 downto 0);
-  signal  write_data_0:     std_logic_vector(DATA_WIDTH - 1 downto 0);
-  signal  write_data_1:     std_logic_vector(DATA_WIDTH - 1 downto 0);
-  signal  masked_read_data: std_logic_vector(DATA_WIDTH - 1 downto 0);
-  signal  masked_value:     std_logic_vector(DATA_WIDTH - 1 downto 0);
+  signal  match:              std_logic_vector(WORDS - 1 downto 0);
+  signal  active:             std_logic;
+  signal  frontdoor_valid:    std_logic;
+  signal  backdoor_valid:     std_logic;
+  signal  pending_valid:      std_logic;
+  signal  register_ready:     std_logic;
+  signal  register_read_data: std_logic_vector(BUS_WIDTH - 1 downto 0);
+  signal  write_0:            std_logic;
+  signal  write_1:            std_logic;
+  signal  mask_0:             std_logic_vector(DATA_WIDTH - 1 downto 0);
+  signal  mask_1:             std_logic_vector(DATA_WIDTH - 1 downto 0);
+  signal  write_data_0:       std_logic_vector(DATA_WIDTH - 1 downto 0);
+  signal  write_data_1:       std_logic_vector(DATA_WIDTH - 1 downto 0);
 begin
   --  Decode Address
   active  <= '1' when unsigned(match) /= 0 else '0';
@@ -148,12 +142,13 @@ begin
   begin
     u_decoder: entity work.rggen_address_decoder
       generic map (
-        READABLE      => READABLE,
-        WRITABLE      => WRITABLE,
-        ADDRESS_WIDTH => ADDRESS_WIDTH,
-        BUS_WIDTH     => BUS_WIDTH,
-        START_ADDRESS => calc_start_address(i, OFFSET_ADDRESS),
-        END_ADDRESS   => calc_end_address(i, OFFSET_ADDRESS)
+        READABLE              => READABLE,
+        WRITABLE              => WRITABLE,
+        ADDRESS_WIDTH         => ADDRESS_WIDTH,
+        BUS_WIDTH             => BUS_WIDTH,
+        START_ADDRESS         => calc_start_address(i, OFFSET_ADDRESS),
+        END_ADDRESS           => calc_end_address(i, OFFSET_ADDRESS),
+        USE_ADDITIONAL_MATCH  => USE_ADDITIONAL_MATCH
       )
       port map (
         i_address           => i_register_address,
@@ -164,24 +159,37 @@ begin
   end generate;
 
   --  Request
-  o_bit_field_valid       <= frontdoor_valid or backdoor_valid or pending_valid;
-  o_bit_field_read_mask   <= read_mask_1  when backdoor_valid = '1' else read_mask_0;
-  o_bit_field_write_mask  <= write_mask_1 when backdoor_valid = '1' else write_mask_0;
+  o_bit_field_write_valid <= ((frontdoor_valid or pending_valid) and write_0) or
+                             ( backdoor_valid                    and write_1);
+  o_bit_field_read_valid  <= ((frontdoor_valid or pending_valid) and (not write_0)) or
+                             ( backdoor_valid                    and (not write_1));
+  o_bit_field_mask        <= mask_1       when backdoor_valid = '1' else mask_0;
   o_bit_field_write_data  <= write_data_1 when backdoor_valid = '1' else write_data_0;
 
   frontdoor_valid <= i_register_valid and active;
-  read_mask_0     <= get_mask(false, READABLE, match, i_register_access, i_register_strobe);
-  write_mask_0    <= get_mask(true , WRITABLE, match, i_register_access, i_register_strobe);
+  write_0         <= i_register_access(0);
+  mask_0          <= get_mask(match, i_register_strobe);
   write_data_0    <= get_write_data(i_register_write_data);
 
   --  Response
   o_register_active     <= active;
   o_register_ready      <= register_ready;
   o_register_status     <= (others => '0');
-  o_register_read_data  <= mux(match, i_bit_field_read_data);
+  o_register_read_data  <= register_read_data;
   o_register_value      <= i_bit_field_value;
 
   register_ready  <= (not backdoor_valid) and active;
+
+  u_read_data_mux: entity work.rggen_mux
+    generic map (
+      WIDTH   => BUS_WIDTH,
+      ENTRIES => WORDS
+    )
+    port map (
+      i_select  => match,
+      i_data    => i_bit_field_read_data,
+      o_data    => register_read_data
+    );
 
   --  Backdoor access
   u_backdoor: rggen_backdoor
@@ -195,8 +203,8 @@ begin
       i_frontdoor_ready => register_ready,
       o_backdoor_valid  => backdoor_valid,
       o_pending_valid   => pending_valid,
-      o_read_mask       => read_mask_1,
-      o_write_mask      => write_mask_1,
+      o_write           => write_1,
+      o_mask            => mask_1,
       o_write_data      => write_data_1,
       i_read_data       => i_bit_field_read_data,
       i_value           => i_bit_field_value

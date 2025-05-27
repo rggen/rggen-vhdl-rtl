@@ -101,43 +101,14 @@ architecture rtl of rggen_adapter_common is
     return register_strobe;
   end get_register_strobe;
 
-  function get_bus_ready (
-    bus_busy:       std_logic;
-    decode_error:   std_logic;
-    register_ready: std_logic_vector
-  ) return std_logic is
-  begin
-    if (INSERT_SLICER and (bus_busy = '0')) then
-      return '0';
-    elsif (decode_error = '1') then
-      return '1';
-    elsif (unsigned(register_ready) /= 0) then
-      return '1';
-    else
-      return '0';
-    end if;
-  end get_bus_ready;
-
-  function get_status (
-    decode_error:     std_logic;
-    register_active:  std_logic_vector;
-    register_status:  std_logic_vector
-  ) return std_logic_vector is
-    variable  result: std_logic_vector(1 downto 0);
-  begin
-    if (ERROR_STATUS and (decode_error = '1')) then
-      result  := "10";
-    else
-      result  := mux(register_active, register_status);
-    end if;
-    return result;
-  end get_status;
-
-  signal  busy:         std_logic;
-  signal  inside_range: std_logic;
-  signal  bus_ready:    std_logic;
-  signal  active:       std_logic_vector(REGISTERS - 1 downto 0);
-  signal  decode_error: std_logic;
+  signal  busy:               std_logic;
+  signal  inside_range:       std_logic;
+  signal  register_active:    std_logic;
+  signal  register_ready:     std_logic;
+  signal  register_read_data: std_logic_vector(BUS_WIDTH - 1 downto 0);
+  signal  register_status:    std_logic_vector(1 downto 0);
+  signal  register_inactive:  std_logic;
+  signal  bus_ready:          std_logic;
 begin
   --  state
   process (i_clk, i_rst_n) begin
@@ -209,11 +180,82 @@ begin
   end generate;
 
   --  response
-  o_bus_ready     <= bus_ready;
-  o_bus_status    <= get_status(decode_error, i_register_active, i_register_status);
-  o_bus_read_data <= mux(i_register_active, i_register_read_data);
+  g_response_with_error: if (ERROR_STATUS) generate
+    constant  RESPONSE_WIDTH: positive  := 2 + BUS_WIDTH + 2;
 
-  active        <= i_register_active when inside_range = '1' else (others => '0');
-  decode_error  <= '1' when unsigned(active) = 0 else '0';
-  bus_ready     <= get_bus_ready(busy, decode_error, i_register_ready);
+    signal  response:           std_logic_vector(RESPONSE_WIDTH * REGISTERS - 1 downto 0);
+    signal  register_response:  std_logic_vector(RESPONSE_WIDTH - 1 downto 0);
+  begin
+    process (i_register_ready, i_register_read_data, i_register_status) begin
+      for i in 0 to REGISTERS - 1 loop
+        response(                                                  RESPONSE_WIDTH * i + 0            )  <= '1';
+        response(                                                  RESPONSE_WIDTH * i + 1            )  <= i_register_ready(i);
+        response(RESPONSE_WIDTH * i + 2 + BUS_WIDTH     - 1 downto RESPONSE_WIDTH * i + 2            )  <= i_register_read_data(BUS_WIDTH * (i + 1) - 1 downto BUS_WIDTH * i);
+        response(RESPONSE_WIDTH * i + 2 + BUS_WIDTH + 2 - 1 downto RESPONSE_WIDTH * i + 2 + BUS_WIDTH)  <= i_register_status(2 * (i + 1) - 1 downto 2 * i);
+      end loop;
+    end process;
+
+    u_response_mux: entity work.rggen_mux
+      generic map (
+        WIDTH   => RESPONSE_WIDTH,
+        ENTRIES => REGISTERS
+      )
+      port map (
+        i_select  => i_register_active,
+        i_data    => response,
+        o_data    => register_response
+      );
+
+    register_active     <= register_response(0);
+    register_ready      <= register_response(1);
+    register_read_data  <= register_response(2 + BUS_WIDTH - 1 downto 2);
+    register_status     <= register_response(2 + BUS_WIDTH + 2 - 1 downto 2 + BUS_WIDTH);
+  end generate;
+
+  g_response_without_error: if (not ERROR_STATUS) generate
+    constant  RESPONSE_WIDTH: positive  := 2 + BUS_WIDTH;
+
+    signal  response:           std_logic_vector(RESPONSE_WIDTH * REGISTERS - 1 downto 0);
+    signal  register_response:  std_logic_vector(RESPONSE_WIDTH - 1 downto 0);
+  begin
+    process (i_register_ready, i_register_read_data) begin
+      for i in 0 to REGISTERS - 1 loop
+        response(                                              RESPONSE_WIDTH * i + 0)  <= '1';
+        response(                                              RESPONSE_WIDTH * i + 1)  <= i_register_ready(i);
+        response(RESPONSE_WIDTH * i + 2 + BUS_WIDTH - 1 downto RESPONSE_WIDTH * i + 2)  <= i_register_read_data(BUS_WIDTH * (i + 1) - 1 downto BUS_WIDTH * i);
+      end loop;
+    end process;
+
+    u_response_mux: entity work.rggen_mux
+      generic map (
+        WIDTH   => RESPONSE_WIDTH,
+        ENTRIES => REGISTERS
+      )
+      port map (
+        i_select  => i_register_active,
+        i_data    => response,
+        o_data    => register_response
+      );
+
+    register_active     <= register_response(0);
+    register_ready      <= register_response(1);
+    register_read_data  <= register_response(2 + BUS_WIDTH - 1 downto 2);
+    register_status     <= (others => '0');
+  end generate;
+
+  o_bus_ready     <= bus_ready;
+  o_bus_status    <= "10" when ERROR_STATUS and (register_inactive = '1') else register_status;
+  o_bus_read_data <= register_read_data;
+
+  register_inactive <= (not register_active) or (not inside_range);
+
+  g_bus_ready_with_slicer: if (INSERT_SLICER) generate
+  begin
+    bus_ready <= busy and (register_ready or register_inactive);
+  end generate;
+
+  g_bus_ready_without_slicer: if (not INSERT_SLICER) generate
+  begin
+    bus_ready <= register_ready or register_inactive;
+  end generate;
 end rtl;
