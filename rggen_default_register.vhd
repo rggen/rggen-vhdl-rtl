@@ -14,24 +14,24 @@ entity rggen_default_register is
     DATA_WIDTH:     positive  := 32
   );
   port (
-    i_clk:                  in  std_logic;
-    i_rst_n:                in  std_logic;
-    i_register_valid:       in  std_logic;
-    i_register_access:      in  std_logic_vector(1 downto 0);
-    i_register_address:     in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
-    i_register_write_data:  in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    i_register_strobe:      in  std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_register_active:      out std_logic;
-    o_register_ready:       out std_logic;
-    o_register_status:      out std_logic_vector(1 downto 0);
-    o_register_read_data:   out std_logic_vector(BUS_WIDTH - 1 downto 0);
-    o_register_value:       out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    o_bit_field_valid:      out std_logic;
-    o_bit_field_read_mask:  out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    o_bit_field_write_mask: out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    o_bit_field_write_data: out std_logic_vector(DATA_WIDTH - 1 downto 0);
-    i_bit_field_read_data:  in  std_logic_vector(DATA_WIDTH - 1 downto 0);
-    i_bit_field_value:      in  std_logic_vector(DATA_WIDTH - 1 downto 0)
+    i_clk:                    in  std_logic;
+    i_rst_n:                  in  std_logic;
+    i_register_valid:         in  std_logic;
+    i_register_access:        in  std_logic_vector(1 downto 0);
+    i_register_address:       in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
+    i_register_write_data:    in  std_logic_vector(BUS_WIDTH - 1 downto 0);
+    i_register_strobe:        in  std_logic_vector(BUS_WIDTH - 1 downto 0);
+    o_register_active:        out std_logic;
+    o_register_ready:         out std_logic;
+    o_register_status:        out std_logic_vector(1 downto 0);
+    o_register_read_data:     out std_logic_vector(BUS_WIDTH - 1 downto 0);
+    o_register_value:         out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    o_bit_field_read_valid:   out std_logic;
+    o_bit_field_write_valid:  out std_logic;
+    o_bit_field_mask:         out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    o_bit_field_write_data:   out std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_bit_field_read_data:    in  std_logic_vector(DATA_WIDTH - 1 downto 0);
+    i_bit_field_value:        in  std_logic_vector(DATA_WIDTH - 1 downto 0)
   );
 end rggen_default_register;
 
@@ -60,9 +60,9 @@ begin
       o_register_read_data    => o_register_read_data,
       o_register_value        => o_register_value,
       i_additional_match      => '1',
-      o_bit_field_valid       => o_bit_field_valid,
-      o_bit_field_read_mask   => o_bit_field_read_mask,
-      o_bit_field_write_mask  => o_bit_field_write_mask,
+      o_bit_field_read_valid  => o_bit_field_read_valid,
+      o_bit_field_write_valid => o_bit_field_write_valid,
+      o_bit_field_mask        => o_bit_field_mask,
       o_bit_field_write_data  => o_bit_field_write_data,
       i_bit_field_read_data   => i_bit_field_read_data,
       i_bit_field_value       => i_bit_field_value
