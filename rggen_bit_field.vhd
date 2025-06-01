@@ -150,11 +150,7 @@ architecture rtl of rggen_bit_field is
   begin
     value := current_value;
     if (SW_WRITE_ACTION = RGGEN_WRITE_DEFAULT) then
-      for i in 0 to WIDTH - 1 loop
-        if (mask(i) = '1') then
-          value(i)  := write_data(i);
-        end if;
-      end loop;
+      value := write_data;
     elsif (SW_WRITE_ACTION = RGGEN_WRITE_0_CLEAR) then
       for i in 0 to WIDTH - 1 loop
         if ((mask(i) = '1') and (write_data(i) = '0')) then
