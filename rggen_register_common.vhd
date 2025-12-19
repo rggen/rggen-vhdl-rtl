@@ -12,7 +12,8 @@ entity rggen_register_common is
     OFFSET_ADDRESS:       unsigned  := x"0";
     BUS_WIDTH:            positive  := 32;
     DATA_WIDTH:           positive  := 32;
-    USE_ADDITIONAL_MATCH: boolean   := false
+    USE_ADDITIONAL_MATCH: boolean   := false;
+    USE_ADDITIONAL_MASK:  boolean   := false
   );
   port (
     i_clk:                    in  std_logic;
@@ -28,6 +29,7 @@ entity rggen_register_common is
     o_register_read_data:     out std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_register_value:         out std_logic_vector(DATA_WIDTH - 1 downto 0);
     i_additional_match:       in  std_logic;
+    i_additional_mask:        in  std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_bit_field_read_valid:   out std_logic;
     o_bit_field_write_valid:  out std_logic;
     o_bit_field_mask:         out std_logic_vector(DATA_WIDTH - 1 downto 0);
@@ -86,21 +88,29 @@ architecture rtl of rggen_register_common is
   end calc_end_address;
 
   function get_mask (
-    match:  std_logic_vector;
-    strobe: std_logic_vector
+    match:          std_logic_vector;
+    strobe:         std_logic_vector;
+    additonal_mask: std_logic_vector
   ) return std_logic_vector is
-    variable  mask: std_logic_vector(DATA_WIDTH - 1 downto 0);
-    variable  msb:  integer;
-    variable  lsb:  integer;
+    variable  word_mask:  std_logic_vector(BUS_WIDTH -1 downto 0);
+    variable  mask:       std_logic_vector(DATA_WIDTH - 1 downto 0);
+    variable  msb:        integer;
+    variable  lsb:        integer;
   begin
+    if (USE_ADDITIONAL_MASK) then
+      word_mask := strobe and additonal_mask;
+    else
+      word_mask := strobe;
+    end if;
+
     if (BUS_WIDTH = DATA_WIDTH) then
-      mask  := strobe;
+      mask  := word_mask;
     else
       for i in 0 to WORDS - 1 loop
         lsb := BUS_WIDTH * (i + 0) - 0;
         msb := BUS_WIDTH * (i + 1) - 1;
         if (match(i) = '1') then
-          mask(msb downto lsb)  := strobe;
+          mask(msb downto lsb)  := word_mask;
         else
           mask(msb downto lsb)  := (others => '0');
         end if;
@@ -168,7 +178,7 @@ begin
 
   frontdoor_valid <= i_register_valid and active;
   write_0         <= i_register_access(0);
-  mask_0          <= get_mask(match, i_register_strobe);
+  mask_0          <= get_mask(match, i_register_strobe, i_additional_mask);
   write_data_0    <= get_write_data(i_register_write_data);
 
   --  Response

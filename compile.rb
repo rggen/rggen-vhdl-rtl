@@ -9,6 +9,7 @@
   'rggen_default_register.vhd',
   'rggen_indirect_register.vhd',
   'rggen_external_register.vhd',
+  'rggen_maskable_register.vhd',
   'rggen_adapter_common.vhd',
   'rggen_apb_adapter.vhd',
   'rggen_apb_bridge.vhd',

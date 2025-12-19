@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 use work.rggen_rtl.all;
 
-entity rggen_default_register is
+entity rggen_maskable_register is
   generic (
     READABLE:       boolean   := true;
     WRITABLE:       boolean   := true;
@@ -33,18 +33,47 @@ entity rggen_default_register is
     i_bit_field_read_data:    in  std_logic_vector(DATA_WIDTH - 1 downto 0);
     i_bit_field_value:        in  std_logic_vector(DATA_WIDTH - 1 downto 0)
   );
-end rggen_default_register;
+end rggen_maskable_register;
 
-architecture rtl of rggen_default_register is
+architecture rtl of rggen_maskable_register is
+  constant  HALF_WIDTH: positive  := BUS_WIDTH / 2;
+
+  function get_mask(
+    register_access:      std_logic_vector;
+    register_write_data:  std_logic_vector;
+    register_strobe:      std_logic_vector
+  ) return std_logic_vector is
+    variable  write_data:       std_logic_vector(HALF_WIDTH - 1 downto 0);
+    variable  strobe:           std_logic_vector(HALF_WIDTH - 1 downto 0);
+    variable  write_data_mask:  std_logic_vector(HALF_WIDTH - 1 downto 0);
+    variable  mask:             std_logic_vector(BUS_WIDTH - 1 downto 0);
+  begin
+    write_data  := register_write_data(2 * HALF_WIDTH - 1 downto 1 * HALF_WIDTH);
+    strobe      := register_strobe(2 * HALF_WIDTH - 1 downto 1 * HALF_WIDTH);
+    if (register_access(RGGEN_ACCESS_DATA_BIT) = '1') then
+      write_data_mask := write_data and strobe;
+    else
+      write_data_mask := (others => '1');
+    end if;
+
+    mask                              := (others => '0');
+    mask(1 * HALF_WIDTH -1 downto 0)  := write_data_mask;
+    return mask;
+  end get_mask;
+
+  signal  mask: std_logic_vector(BUS_WIDTH - 1 downto 0);
 begin
+  mask  <= get_mask(i_register_access, i_register_write_data, i_register_strobe);
+
   u_register_common: entity work.rggen_register_common
     generic map (
-      READABLE        => READABLE,
-      WRITABLE        => WRITABLE,
-      ADDRESS_WIDTH   => ADDRESS_WIDTH,
-      OFFSET_ADDRESS  => OFFSET_ADDRESS,
-      BUS_WIDTH       => BUS_WIDTH,
-      DATA_WIDTH      => DATA_WIDTH
+      READABLE            => READABLE,
+      WRITABLE            => WRITABLE,
+      ADDRESS_WIDTH       => ADDRESS_WIDTH,
+      OFFSET_ADDRESS      => OFFSET_ADDRESS,
+      BUS_WIDTH           => BUS_WIDTH,
+      DATA_WIDTH          => DATA_WIDTH,
+      USE_ADDITIONAL_MASK => true
     )
     port map (
       i_clk                   => i_clk,
@@ -60,7 +89,7 @@ begin
       o_register_read_data    => o_register_read_data,
       o_register_value        => o_register_value,
       i_additional_match      => '1',
-      i_additional_mask       => (others => '1'),
+      i_additional_mask       => mask,
       o_bit_field_read_valid  => o_bit_field_read_valid,
       o_bit_field_write_valid => o_bit_field_write_valid,
       o_bit_field_mask        => o_bit_field_mask,

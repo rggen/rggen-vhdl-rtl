@@ -66,6 +66,7 @@ begin
       o_register_read_data    => o_register_read_data,
       o_register_value        => o_register_value,
       i_additional_match      => additional_match,
+      i_additional_mask       => (others => '1'),
       o_bit_field_read_valid  => o_bit_field_read_valid,
       o_bit_field_write_valid => o_bit_field_write_valid,
       o_bit_field_mask        => o_bit_field_mask,
