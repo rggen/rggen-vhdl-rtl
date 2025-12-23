@@ -23,7 +23,7 @@ entity rggen_axi4lite_adapter is
     i_rst_n:                in  std_logic;
     i_awvalid:              in  std_logic;
     o_awready:              out std_logic;
-    i_awid:                 in  std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    i_awid:                 in  std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     i_awaddr:               in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_awprot:               in  std_logic_vector(2 downto 0);
     i_wvalid:               in  std_logic;
@@ -32,16 +32,16 @@ entity rggen_axi4lite_adapter is
     i_wstrb:                in  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
     o_bvalid:               out std_logic;
     i_bready:               in  std_logic;
-    o_bid:                  out std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    o_bid:                  out std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     o_bresp:                out std_logic_vector(1 downto 0);
     i_arvalid:              in  std_logic;
     o_arready:              out std_logic;
-    i_arid:                 in  std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    i_arid:                 in  std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     i_araddr:               in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_arprot:               in  std_logic_vector(2 downto 0);
     o_rvalid:               out std_logic;
     i_rready:               in  std_logic;
-    o_rid:                  out std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    o_rid:                  out std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     o_rresp:                out std_logic_vector(1 downto 0);
     o_rdata:                out std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_register_valid:       out std_logic;
@@ -80,7 +80,7 @@ architecture rtl of rggen_axi4lite_adapter is
 
   signal  awvalid:                std_logic;
   signal  awready:                std_logic;
-  signal  awid:                   std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  awid:                   std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
   signal  awaddr:                 std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
   signal  awprot:                 std_logic_vector(2 downto 0);
   signal  wvalid:                 std_logic;
@@ -89,16 +89,16 @@ architecture rtl of rggen_axi4lite_adapter is
   signal  wstrb:                  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
   signal  bvalid:                 std_logic;
   signal  bready:                 std_logic;
-  signal  bid:                    std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  bid:                    std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
   signal  bresp:                  std_logic_vector(1 downto 0);
   signal  arvalid:                std_logic;
   signal  arready:                std_logic;
-  signal  arid:                   std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  arid:                   std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
   signal  araddr:                 std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
   signal  arprot:                 std_logic_vector(2 downto 0);
   signal  rvalid:                 std_logic;
   signal  rready:                 std_logic;
-  signal  rid:                    std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  rid:                    std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
   signal  rresp:                  std_logic_vector(1 downto 0);
   signal  rdata:                  std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  bus_valid:              std_logic;
@@ -114,7 +114,7 @@ architecture rtl of rggen_axi4lite_adapter is
   signal  request_valid_lathced:  std_logic_vector(1 downto 0);
   signal  response_valid:         std_logic_vector(1 downto 0);
   signal  response_ack:           std_logic;
-  signal  response_id:            std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  response_id:            std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
   signal  response_data:          std_logic_vector(BUS_WIDTH - 1 downto 0);
   signal  response_status:        std_logic_vector(1 downto 0);
 begin

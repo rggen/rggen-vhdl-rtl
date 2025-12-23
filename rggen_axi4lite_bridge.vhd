@@ -23,7 +23,7 @@ entity rggen_axi4lite_bridge is
     o_bus_read_data:  out std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_awvalid:        out std_logic;
     i_awready:        in  std_logic;
-    o_awid:           out std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    o_awid:           out std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     o_awaddr:         out std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     o_awprot:         out std_logic_vector(2 downto 0);
     o_wvalid:         out std_logic;
@@ -32,16 +32,16 @@ entity rggen_axi4lite_bridge is
     o_wstrb:          out std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
     i_bvalid:         in  std_logic;
     o_bready:         out std_logic;
-    i_bid:            in  std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    i_bid:            in  std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     i_bresp:          in  std_logic_vector(1 downto 0);
     o_arvalid:        out std_logic;
     i_arready:        in  std_logic;
-    o_arid:           out std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    o_arid:           out std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     o_araddr:         out std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     o_arprot:         out std_logic_vector(2 downto 0);
     i_rvalid:         in  std_logic;
     o_rready:         out std_logic;
-    i_rid:            in  std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    i_rid:            in  std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     i_rresp:          in  std_logic_vector(1 downto 0);
     i_rdata:          in  std_logic_vector(BUS_WIDTH - 1 downto 0)
   );

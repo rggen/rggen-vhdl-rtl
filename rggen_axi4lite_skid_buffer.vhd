@@ -15,7 +15,7 @@ entity rggen_axi4lite_skid_buffer is
     i_rst_n:    in  std_logic;
     i_awvalid:  in  std_logic;
     o_awready:  out std_logic;
-    i_awid:     in  std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    i_awid:     in  std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     i_awaddr:   in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_awprot:   in  std_logic_vector(2 downto 0);
     i_wvalid:   in  std_logic;
@@ -24,21 +24,21 @@ entity rggen_axi4lite_skid_buffer is
     i_wstrb:    in  std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
     o_bvalid:   out std_logic;
     i_bready:   in  std_logic;
-    o_bid:      out std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    o_bid:      out std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     o_bresp:    out std_logic_vector(1 downto 0);
     i_arvalid:  in  std_logic;
     o_arready:  out std_logic;
-    i_arid:     in  std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    i_arid:     in  std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     i_araddr:   in  std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     i_arprot:   in  std_logic_vector(2 downto 0);
     o_rvalid:   out std_logic;
     i_rready:   in  std_logic;
-    o_rid:      out std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    o_rid:      out std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     o_rresp:    out std_logic_vector(1 downto 0);
     o_rdata:    out std_logic_vector(BUS_WIDTH - 1 downto 0);
     o_awvalid:  out std_logic;
     i_awready:  in  std_logic;
-    o_awid:     out std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    o_awid:     out std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     o_awaddr:   out std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     o_awprot:   out std_logic_vector(2 downto 0);
     o_wvalid:   out std_logic;
@@ -47,16 +47,16 @@ entity rggen_axi4lite_skid_buffer is
     o_wstrb:    out std_logic_vector(BUS_WIDTH / 8 - 1 downto 0);
     i_bvalid:   in  std_logic;
     o_bready:   out std_logic;
-    i_bid:      in  std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    i_bid:      in  std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     i_bresp:    in  std_logic_vector(1 downto 0);
     o_arvalid:  out std_logic;
     i_arready:  in  std_logic;
-    o_arid:     out std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    o_arid:     out std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     o_araddr:   out std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
     o_arprot:   out std_logic_vector(2 downto 0);
     i_rvalid:   in  std_logic;
     o_rready:   out std_logic;
-    i_rid:      in  std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+    i_rid:      in  std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
     i_rresp:    in  std_logic_vector(1 downto 0);
     i_rdata:    in  std_logic_vector(BUS_WIDTH - 1 downto 0)
   );
@@ -66,7 +66,7 @@ architecture rtl of rggen_axi4lite_skid_buffer is
   signal  awbusy:   std_logic;
   signal  awvalid:  std_logic;
   signal  awready:  std_logic;
-  signal  awid:     std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  awid:     std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
   signal  awaddr:   std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
   signal  awprot:   std_logic_vector(2 downto 0);
   signal  wbusy:    std_logic;
@@ -77,7 +77,7 @@ architecture rtl of rggen_axi4lite_skid_buffer is
   signal  arbusy:   std_logic;
   signal  arvalid:  std_logic;
   signal  arready:  std_logic;
-  signal  arid:     std_logic_vector(clip_id_width(ID_WIDTH) - 1 downto 0);
+  signal  arid:     std_logic_vector(clip_width(ID_WIDTH) - 1 downto 0);
   signal  araddr:   std_logic_vector(ADDRESS_WIDTH - 1 downto 0);
   signal  arprot:   std_logic_vector(2 downto 0);
 begin

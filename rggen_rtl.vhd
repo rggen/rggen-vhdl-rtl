@@ -68,7 +68,7 @@ package rggen_rtl is
     multiplier:         positive
   ) return unsigned;
 
-  function clip_id_width(
+  function clip_width(
     id_width: natural
   ) return natural;
 end rggen_rtl;
@@ -122,7 +122,7 @@ package body rggen_rtl is
     return result;
   end repeat;
 
-  function clip_id_width(
+  function clip_width(
     id_width: natural
   ) return natural is
   begin
@@ -131,5 +131,5 @@ package body rggen_rtl is
     else
       return id_width;
     end if;
-  end clip_id_width;
+  end clip_width;
 end rggen_rtl;

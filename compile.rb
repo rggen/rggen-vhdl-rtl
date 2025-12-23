@@ -3,6 +3,7 @@
   'rggen_or_reducer.vhd',
   'rggen_mux.vhd',
   'rggen_bit_field.vhd',
+  'rggen_bit_field_counter.vhd',
   'rggen_bit_field_w01trg.vhd',
   'rggen_address_decoder.vhd',
   'rggen_register_common.vhd',
